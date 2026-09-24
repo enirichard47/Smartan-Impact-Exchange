@@ -10,7 +10,13 @@ export const CAMPAIGN = {
 };
 
 export const env = {
-  siteUrl: (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, ''),
+  // SITE_URL is server-only (no NEXT_PUBLIC_ prefix); the page receives it from the server.
+  // On Vercel it falls back to the project's production domain if SITE_URL is not set.
+  siteUrl: (
+    process.env.SITE_URL
+    || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : '')
+    || 'http://localhost:3000'
+  ).replace(/\/$/, ''),
   supabaseUrl: process.env.SUPABASE_URL || '',
   supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   paystackSecret: process.env.PAYSTACK_SECRET_KEY || '',
