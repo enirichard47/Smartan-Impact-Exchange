@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Smartan Impact Exchange — Build the new Smartan House facility</title>
+  <meta name="description" content="Smartan House is raising ₦300,000,000 to build a new facility and the Acorn Incubator Hub. Become a Builder — no account needed.">
+  <meta name="theme-color" content="#07090D">
+  <meta name="color-scheme" content="dark light">
+  <meta property="og:title" content="Smartan Impact Exchange (SIX)">
+  <meta property="og:description" content="Help build the new Smartan House facility, brick by brick. ₦300M target. Become a Builder.">
+  <link rel="icon" href="assets/logo-mark.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/config.js"></script>
+  <script>
+    (function () {
+      var d = document.documentElement, t = null;
+      d.classList.add('js');
+      try { t = localStorage.getItem('six-theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') t = window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      d.setAttribute('data-theme', t);
+      try { if (window.SIX_CONFIG && SIX_CONFIG.playOpening()) d.classList.add('is-opening'); } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="is-loading">
+
+
+  <!-- ============ LOADER ============ -->
+  <div class="loader" id="loader" aria-hidden="true">
+    <div class="loader__inner">
+      <span class="logo-mark loader__logo"><img src="assets/logo-icon.png" alt=""></span>
+      <div class="loader__mark">SIX</div>
+      <div class="loader__name mono">SMARTAN IMPACT EXCHANGE</div>
+      <div class="loader__bar"><span id="loaderBar"></span></div>
+      <div class="loader__status mono"><span>INITIALIZING IMPACT MARKET...</span><span id="loaderPct">000</span></div>
+    </div>
+  </div>
+
+  <!-- ============ OPENING DAY SEQUENCE ============ -->
+  <div class="opening" id="opening" role="dialog" aria-modal="true" aria-label="Smartan Impact Exchange opening sequence">
+    <div class="op__stage">
+      <div class="op__scene op__scene--gate" data-scene="gate">
+        <span class="logo-mark op__mark"><img src="assets/logo-icon.png" alt=""></span>
+        <span class="op__label mono">OPENING DAY</span>
+        <span class="op__gate-title">Smartan Impact Exchange</span>
+        <div class="op__gate-ctas">
+          <button class="btn btn--primary btn--lg" id="opSoundOn" type="button">Begin with sound</button>
+          <button class="btn btn--ghost btn--lg" id="opSoundOff" type="button">Begin without sound</button>
+        </div>
+      </div>
+      <div class="op__scene" data-scene="date">
+        <span class="op__date mono" id="opDate">23 SEPTEMBER 2026</span>
+        <span class="op__city mono" id="opCity">LAGOS, NIGERIA</span>
+      </div>
+      <div class="op__scene" data-scene="name">
+        <span class="logo-mark op__mark"><img src="assets/logo-icon.png" alt=""></span>
+        <span class="op__name">Smartan Impact Exchange</span>
+        <span class="op__sub">The Smartan House facility campaign</span>
+      </div>
+      <div class="op__scene" data-scene="target">
+        <span class="op__label mono">CAMPAIGN TARGET</span>
+        <span class="op__amount mono" id="opAmount">₦0</span>
+        <svg class="op__pulse" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M0 60 H500 L528 60 L546 38 L562 60 L578 60 L596 6 L616 114 L634 60 L652 60 L668 46 L684 60 H1200"/></svg>
+      </div>
+      <div class="op__scene" data-scene="bricks">
+        <span class="op__bricks mono"><span id="opBricks">0</span> bricks</span>
+        <span class="op__sub">One new home for the next generation.</span>
+      </div>
+      <div class="op__scene" data-scene="begin">
+        <span class="op__begin">The build begins.</span>
+      </div>
+    </div>
+    <div class="op__meta mono"><span>OPENING DAY</span><span><span id="opClock">--:--:--</span> WAT</span></div>
+    <div class="op__controls">
+      <button class="op__skip mono" id="opSound" type="button" aria-pressed="false" hidden>Sound off</button>
+      <button class="op__skip mono" id="opSkip" type="button">Skip intro <span aria-hidden="true">→</span></button>
+    </div>
+  </div>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a class="brand" href="#top" aria-label="The Smartan House — Smartan Impact Exchange home">
+        <span class="logo" role="img" aria-label="The Smartan House"><img class="logo__mark" src="assets/logo-icon.png" alt="" width="108" height="45"><img class="logo__word" src="assets/logo-icon.png" alt="" width="108" height="45"></span>
+        <span class="brand__six mono">SIX</span>
+      </a>
+      <nav class="nav__links" aria-label="Primary">
+        <a href="#vision" data-nav="vision">Vision</a>
+        <a href="#facility" data-nav="facility">Facility</a>
+        <a href="#build" data-nav="build">The Build</a>
+        <a href="#progress" data-nav="progress">Progress</a>
+        <a href="#transparency" data-nav="transparency">Transparency</a>
+      </nav>
+      <div class="nav__right">
+        <span class="nav__status mono"><i class="live-dot"></i><span data-market-status>CAMPAIGN LIVE</span></span>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light mode" title="Switch to light mode"><svg class="ti ti--sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg><svg class="ti ti--moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
+        <button class="btn btn--primary btn--sm nav__cta" data-acquire>Become a Builder</button>
+        <button class="nav__burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu"><span></span><span></span></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mmenu" id="mobileMenu" aria-hidden="true">
+    <nav class="mmenu__links" aria-label="Mobile">
+      <a href="#vision"><span class="mono">01</span>Vision</a>
+      <a href="#facility"><span class="mono">02</span>Facility</a>
+      <a href="#build"><span class="mono">03</span>The Build</a>
+      <a href="#progress"><span class="mono">04</span>Progress</a>
+      <a href="#transparency"><span class="mono">05</span>Transparency</a>
+    </nav>
+    <div class="mmenu__foot">
+      <button class="btn btn--primary btn--lg btn--block" data-acquire>Become a Builder <span class="arr">→</span></button>
+      <div class="mono mmenu__meta">
+        <span><i class="live-dot"></i><span data-market-status>CAMPAIGN LIVE</span></span>
+        <span>CAMPAIGN ID SH-2026-001</span>
+        <span><span data-clock>--:--:--</span> WAT</span>
+      </div>
+    </div>
+  </div>
+
+  <main id="top">
+
+    <!-- ============ 01 THE CALL ============ -->
+    <section class="hero">
+      <div class="hero__grid" aria-hidden="true"></div>
+      <div class="container hero__inner">
+        <div class="hero__copy">
+          <div class="eyebrow mono hero__eyebrow">
+            <span class="chip">SIX / 001</span>
+            <span>SMARTAN HOUSE FACILITY CAMPAIGN</span>
+          </div>
+          <h1 class="h-display hero__title">
+            <span class="line"><span style="--d:0ms">The future isn't</span></span>
+            <span class="line"><span style="--d:80ms">something we watch.</span></span>
+            <span class="line line--em"><span style="--d:220ms">It's something</span></span>
+            <span class="line line--em"><span style="--d:300ms">we build.</span></span>
+          </h1>
+
+          <div class="hq" aria-label="Campaign progress">
+            <p class="hq__line"><b class="hq__raised mono" data-bind="raisedM">₦0.00M</b> <span class="hq__of">raised of ₦300M</span></p>
+            <div class="hq__bar" role="progressbar" aria-label="Share of the ₦300M target raised" aria-valuemin="0" aria-valuemax="100"><i class="hq__fill" data-bind-width></i></div>
+            <p class="hq__meta"><span data-bind="progress">0.00%</span> funded by <span data-bind="builders">0</span> Builders</p>
+          </div>
+
+          <p class="lede hero__lede">Smartan House is raising ₦300,000,000 to build a new home for exceptional young people from underserved communities — with residential space, the Acorn Incubator Hub, and places to learn and build together. <span class="hero__brick">Every Builder lays a brick. Together, we build it brick by brick.</span></p>
+          <div class="hero__ctas">
+            <button class="btn btn--primary btn--lg" data-acquire>Become a Builder <span class="arr">→</span></button>
+            <a class="btn btn--ghost btn--lg" href="#facility">See the facility</a>
+          </div>
+          <div class="hero__fine mono">No account needed. Not an investment.</div>
+        </div>
+
+        <div class="hero__visual" data-parallax="0.06">
+          <div class="bld-host" id="heroBuilding"></div>
+        </div>
+      </div>
+      <div class="container hero__meta mono">
+        <span>CAMPAIGN ID: SH-2026-001</span>
+        <span class="hide-sm">LAST UPDATED: <span data-bind-text="updated">--:--:--</span> WAT</span>
+        <span class="hero__scroll">SCROLL <i></i></span>
+      </div>
+    </section>
+
+    <!-- ============ LIVE CAMPAIGN BOARD ============ -->
+    <section class="market" aria-label="Live campaign board">
+      <div class="market__board">
+        <div class="market__label mono">
+          <span>SMARTAN FACILITY CAMPAIGN</span>
+          <span class="live"><i class="live-dot"></i>LIVE</span>
+        </div>
+        <dl class="market__cells">
+          <div class="mcell"><dt class="mono">TARGET</dt><dd class="mono">₦300,000,000</dd><span class="mono mcell__sub">FACILITY CAMPAIGN</span></div>
+          <div class="mcell"><dt class="mono">RAISED</dt><dd class="mono up" data-bind="raised">₦0</dd><span class="mono mcell__sub">VERIFIED</span></div>
+          <div class="mcell"><dt class="mono">PROGRESS</dt><dd class="mono" data-bind="progress">0.00%</dd><span class="mcell__bar"><i data-bind-width></i></span></div>
+          <div class="mcell"><dt class="mono">BUILDERS</dt><dd class="mono" data-bind="builders">0</dd><span class="mono mcell__sub">PEOPLE</span></div>
+          <div class="mcell"><dt class="mono">BRICKS LAID</dt><dd class="mono" data-bind="units">0</dd><span class="mono mcell__sub">1 IU = 1 BRICK = ₦10,000</span></div>
+        </dl>
+      </div>
+      <div class="ticker" aria-hidden="true">
+        <div class="ticker__track" id="tickerTrack">
+          <span class="tk"><b>SIX</b> RAISED <em data-bind="raised">₦0</em></span>
+          <span class="tk">PROGRESS <em data-bind="progress">0.00%</em></span>
+          <span class="tk">BUILDERS <em data-bind="builders">0</em></span>
+          <span class="tk">BRICKS LAID <em data-bind="units">0</em></span>
+          <span class="tk">REMAINING <em data-bind="remaining">₦300,000,000</em></span>
+          <span class="tk">LATEST <em data-bind-text="latest">—</em></span>
+          <span class="tk tk--note">IMPACT UNITS ARE CAMPAIGN CONTRIBUTIONS — NOT SECURITIES</span>
+        </div>
+      </div>
+      <div class="container market__note mono">
+        <span>LAST UPDATED <span data-bind-text="updated">--:--:--</span> WAT</span>
+        <span class="market__disc">Campaign figures — not financial securities.</span>
+      </div>
+    </section>
+
+    <!-- ============ OPENING BELL ============ -->
+    <section class="bell" id="bell" aria-labelledby="bellTitle">
+      <div class="container bell__inner">
+        <div class="shead" data-reveal><span class="mono">SIX / OPEN</span><i></i><span class="mono">THE OPENING BELL</span></div>
+
+        <div class="bell__stage" id="bellStage" aria-hidden="true">
+          <i class="bell__ring"></i><i class="bell__ring"></i><i class="bell__ring"></i>
+          <svg class="bell__svg" viewBox="0 0 220 240">
+            <line class="bell__beam" x1="40" y1="16" x2="180" y2="16"/>
+            <line class="bell__beam bell__beam--post" x1="52" y1="8" x2="52" y2="24"/>
+            <line class="bell__beam bell__beam--post" x1="168" y1="8" x2="168" y2="24"/>
+            <g class="bell__body" id="bellBody">
+              <!-- cut from assets/photos/bell.png (frame 1); hangs by its loop from the beam at y=16 -->
+              <image href="assets/bell.webp" x="31.35" y="5.5" width="157.3" height="224"/>
+            </g>
+          </svg>
+        </div>
+
+        <h2 class="bell__title" id="bellTitle"><span id="bellPre">The Smartan Impact Exchange</span> <span class="acc" id="bellState">is open.</span></h2>
+
+        <div class="board mono" id="bellBoard">
+          <div class="board__cell"><span class="board__k">OPENING BELL</span><span class="board__v" data-flap="09:00 WAT">09:00 WAT</span></div>
+          <div class="board__cell"><span class="board__k">STATUS</span><span class="board__v" data-flap="MARKET OPEN">MARKET OPEN</span></div>
+          <div class="board__cell"><span class="board__k">SH-2026-001</span><span class="board__v" data-flap="BUILDING BEGINS">BUILDING BEGINS</span></div>
+        </div>
+
+        <p class="bell__meta mono" id="bellMeta">OPENED 23 SEP 2026 AT 09:00 WAT</p>
+        <div class="bell__ctas">
+          <button class="btn btn--primary btn--lg" id="ringBell" type="button">Ring the bell &amp; lay a brick <span class="arr">→</span></button>
+          <button class="btn btn--ghost btn--lg" id="replayOpening" type="button" aria-label="Replay the opening sequence">
+            <svg class="btn__ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 3.5v4.4h4.4"/></svg>
+            Replay the opening
+          </button>
+          <a class="btn btn--ghost btn--lg" id="bellLive" href="#" target="_blank" rel="noopener" hidden>Watch the opening bell <span class="arr">↗</span></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 02 THE CASE ============ -->
+    <section class="sec case" id="vision">
+      <div class="container">
+        <div class="shead" data-reveal><span class="mono">SIX / 002</span><i></i><span class="mono">THE CASE FOR THE FACILITY</span></div>
+        <div class="case__lines">
+          <p class="case__line" data-scrub>The work has grown.</p>
+          <p class="case__line" data-scrub>The need has grown.</p>
+          <p class="case__line" data-scrub>The vision has grown.</p>
+          <p class="case__line case__line--em" data-scrub><span class="acc">Now the infrastructure must grow.</span></p>
+        </div>
+        <div class="case__body">
+          <p class="lede" data-reveal>Smartan House works with exceptional young people — many from underserved communities. The next chapter needs a permanent home: a place to live, learn and launch, built for the young people it will serve.</p>
+          <p class="case__aside mono" data-reveal>THIS CAMPAIGN FUNDS ONE THING: THE NEW SMARTAN HOUSE FACILITY AND ACORN INCUBATOR HUB.</p>
+        </div>
+
+        <div class="phgrid phgrid--case" data-photo-group data-reveal>
+          <figure class="ph ph--lead" data-photo="caseWork" style="--ar:16 / 10">
+            <div class="ph__frame">
+              <div class="ph__empty">
+                <span class="ph__n mono">PHOTO 01</span>
+                <b class="ph__title">Young people at work in the current space</b>
+                <p class="ph__brief">A real session in progress, candid, not posed. Landscape, at least 2400px wide.</p>
+                <code class="ph__file mono">assets/photos/case-work.webp</code>
+              </div>
+            </div>
+            <figcaption class="ph__cap mono"><span>01</span><span data-cap>Young people at work in the current space</span></figcaption>
+          </figure>
+          <figure class="ph" data-photo="caseSpace" style="--ar:4 / 3">
+            <div class="ph__frame">
+              <div class="ph__empty">
+                <span class="ph__n mono">PHOTO 02</span>
+                <b class="ph__title">The current space</b>
+                <p class="ph__brief">Shows the space is full or outgrown, and why a new home is needed.</p>
+                <code class="ph__file mono">assets/photos/case-space.webp</code>
+              </div>
+            </div>
+            <figcaption class="ph__cap mono"><span>02</span><span data-cap>The current space</span></figcaption>
+          </figure>
+          <figure class="ph" data-photo="caseMentor" style="--ar:4 / 3">
+            <div class="ph__frame">
+              <div class="ph__empty">
+                <span class="ph__n mono">PHOTO 03</span>
+                <b class="ph__title">A mentoring moment</b>
+                <p class="ph__brief">Close and candid, one or two people. Warm, natural light.</p>
+                <code class="ph__file mono">assets/photos/case-mentor.webp</code>
+              </div>
+            </div>
+            <figcaption class="ph__cap mono"><span>03</span><span data-cap>A mentoring moment</span></figcaption>
+          </figure>
+        </div>
+
+        <h3 class="sub-h" data-reveal>What the facility makes possible</h3>
+        <div class="pillars" data-stagger="110">
+          <article class="pillar" data-reveal>
+            <div class="pillar__top mono"><span>01</span><span>SKILLS → CAREERS</span></div>
+            <h3 class="pillar__title">Capacity</h3>
+            <p>More young people equipped with world-class skills.</p>
+            <i class="pillar__bar"></i>
+          </article>
+          <article class="pillar" data-reveal>
+            <div class="pillar__top mono"><span>02</span><span>PEERS → NETWORK</span></div>
+            <h3 class="pillar__title">Community</h3>
+            <p>A physical home where exceptional young people can grow together.</p>
+            <i class="pillar__bar"></i>
+          </article>
+          <article class="pillar" data-reveal>
+            <div class="pillar__top mono"><span>03</span><span>IDEAS → VENTURES</span></div>
+            <h3 class="pillar__title">Innovation</h3>
+            <p>The Acorn Incubator Hub turning ideas into real ventures and solutions.</p>
+            <i class="pillar__bar"></i>
+          </article>
+          <article class="pillar" data-reveal>
+            <div class="pillar__top mono"><span>04</span><span>LOCAL → GLOBAL</span></div>
+            <h3 class="pillar__title">Future</h3>
+            <p>A generation prepared to compete globally and contribute meaningfully.</p>
+            <i class="pillar__bar"></i>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 03 THE FACILITY ============ -->
+    <section class="sec facility" id="facility">
+      <div class="container">
+        <div class="shead" data-reveal><span class="mono">SIX / 003</span><i></i><span class="mono">THE FACILITY</span></div>
+        <div class="fac">
+          <div class="fac__copy">
+            <h2 class="h2" data-reveal>Something real<br>is being built.</h2>
+            <p class="lede" data-reveal>One facility, designed around the young people it will serve: a home, an incubator, and places to learn and build together.</p>
+            <dl class="specs mono" id="facSpecs" hidden></dl>
+            <ol class="fac__list" id="facList" data-stagger="70">
+              <li><button class="fac-item is-active" data-part="house" data-reveal><span class="mono">01</span><span class="fac-item__name">Smartan House</span><span class="fac-item__spec mono">RESIDENTIAL</span><p>The residential and community core of the facility — a place to live, study and belong.</p></button></li>
+              <li><button class="fac-item" data-part="acorn" data-reveal><span class="mono">02</span><span class="fac-item__name">Acorn Incubator Hub</span><span class="fac-item__spec mono">INCUBATION</span><p>Space, tools and mentorship to learn, build, test and launch real ventures and solutions.</p></button></li>
+              <li><button class="fac-item" data-part="learning" data-reveal><span class="mono">03</span><span class="fac-item__name">Learning Spaces</span><span class="fac-item__spec mono">LEARNING</span><p>Rooms designed for deep, focused learning.</p></button></li>
+              <li><button class="fac-item" data-part="collab" data-reveal><span class="mono">04</span><span class="fac-item__name">Collaboration Spaces</span><span class="fac-item__spec mono">COLLABORATION</span><p>Open space for teams, workshops and mentors.</p></button></li>
+              <li><button class="fac-item" data-part="tech" data-reveal><span class="mono">05</span><span class="fac-item__name">Technology</span><span class="fac-item__spec mono">INFRASTRUCTURE</span><p>The connectivity, power and devices a modern learning facility runs on.</p></button></li>
+              <li><button class="fac-item" data-part="community" data-reveal><span class="mono">06</span><span class="fac-item__name">Facility Infrastructure</span><span class="fac-item__spec mono">SHARED SPACES</span><p>The shared spaces and services that make the centre operational.</p></button></li>
+            </ol>
+          </div>
+          <div class="fac__visual" data-reveal>
+            <div class="frame frame--tall">
+              <div class="frame__head mono"><span>FACILITY MODEL</span><span id="facLabel">01 — SMARTAN HOUSE</span></div>
+              <div class="bld-host" id="facBuilding"></div>
+              <div class="frame__foot mono"><span>ILLUSTRATIVE — NOT TO SCALE</span><span>SH-2026-001</span></div>
+              <i class="corner c-tl"></i><i class="corner c-tr"></i><i class="corner c-bl"></i><i class="corner c-br"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="phset" data-photo-group data-reveal>
+          <div class="phset__head mono"><span>THE FACILITY IN PICTURES</span><span>RENDERS AND SITE PHOTOGRAPHY</span></div>
+          <div class="phgrid phgrid--fac">
+          <figure class="ph ph--wide" data-photo="facExterior" style="--ar:1415 / 1112">
+            <div class="ph__frame">
+              <div class="ph__empty">
+                <span class="ph__n mono">PHOTO 04</span>
+                <b class="ph__title">Architect's render: exterior</b>
+                <p class="ph__brief">The single most important image on the page. What is being built, from the street.</p>
+                <code class="ph__file mono">assets/photos/facility.webp</code>
+              </div>
+            </div>
+            <figcaption class="ph__cap mono"><span>04</span><span data-cap>Architect's render: exterior</span></figcaption>
+          </figure>
+          <figure class="ph" data-photo="facSite" style="--ar:4 / 3">
+            <div class="ph__frame">
+              <div class="ph__empty">
+                <span class="ph__n mono">PHOTO 05</span>
+                <b class="ph__title">The site today</b>
+                <p class="ph__brief">A clear, daylight photo of the actual site, as it is now.</p>
+                <code class="ph__file mono">assets/photos/facility-site.webp</code>
+              </div>
+            </div>
+            <figcaption class="ph__cap mono"><span>05</span><span data-cap>The site today</span></figcaption>
+          </figure>
+          <figure class="ph" data-photo="facAcorn" style="--ar:4 / 3">
+            <div class="ph__frame">
+              <div class="ph__empty">
+                <span class="ph__n mono">PHOTO 06</span>
+                <b class="ph__title">Render: Acorn Incubator Hub</b>
+                <p class="ph__brief">The incubator interior, ideally with people using the space.</p>
+                <code class="ph__file mono">assets/photos/facility-acorn.webp</code>
+              </div>
+            </div>
+            <figcaption class="ph__cap mono"><span>06</span><span data-cap>Render: Acorn Incubator Hub</span></figcaption>
+          </figure>
+          <figure class="ph" data-photo="facPlan" style="--ar:4 / 3">
+            <div class="ph__frame">
+              <div class="ph__empty">
+                <span class="ph__n mono">PHOTO 07</span>
+                <b class="ph__title">Render: Smartan House residence</b>
+                <p class="ph__brief">A room in the Smartan House residence, where young people will live.</p>
+                <code class="ph__file mono">assets/photos/facility-residence.webp</code>
+              </div>
+            </div>
+            <figcaption class="ph__cap mono"><span>07</span><span data-cap>Render: Smartan House residence</span></figcaption>
+          </figure>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 04 THE BUILD ============ -->
+    <section class="seq" id="build" aria-label="The build">
+      <div class="seq__sticky">
+        <div class="container seq__grid">
+          <div class="seq__copy">
+            <div class="eyebrow mono"><span class="chip">SIX / 004</span><span>THE BUILD</span></div>
+            <h2 class="h2">Your contribution doesn't disappear. <span class="muted">It becomes infrastructure.</span></h2>
+            <div class="seq__readout">
+              <div class="seq__lvl">
+                <span class="label mono">FUNDING LEVEL</span>
+                <span class="seq__pct mono" id="seqPct">0.00%</span>
+                <span class="seq__amt mono" id="seqAmt">₦0</span>
+              </div>
+              <ol class="seq__stages">
+                <li data-stage="0"><span class="mono">0–25%</span><div><b>Foundation &amp; early development</b><p>The groundwork that everything else stands on.</p></div></li>
+                <li data-stage="1"><span class="mono">25–50%</span><div><b>Structure</b><p>The building takes shape — floors, rooms and the Acorn Hub.</p></div></li>
+                <li data-stage="2"><span class="mono">50–75%</span><div><b>Infrastructure &amp; interior</b><p>Power, connectivity and fit-out. The rooms come alive.</p></div></li>
+                <li data-stage="3"><span class="mono">75–100%</span><div><b>Final systems &amp; activation</b><p>Technology, equipment and shared spaces online. Facility ready.</p></div></li>
+              </ol>
+              <p class="seq__note mono">WHAT EACH FUNDING LEVEL MAKES POSSIBLE — ILLUSTRATIVE, NOT REPORTED CONSTRUCTION</p>
+            </div>
+          </div>
+          <div class="seq__visual">
+            <div class="bld-host" id="seqBuilding"></div>
+            <div class="seq__scale mono">
+              <div class="seq__track"><i class="seq__fill" id="seqFill"></i><i class="seq__now" id="seqNow"><span>NOW <b data-bind="progress">0.00%</b></span></i></div>
+              <div class="seq__ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec milestones" aria-labelledby="msTitle">
+      <div class="container">
+        <div class="sec__intro">
+          <h2 class="h2" id="msTitle" data-reveal>Verified milestones.</h2>
+          <p class="lede" data-reveal>The physical build, step by step. A milestone is only marked complete once Smartan has verified it — and this track updates when it is.</p>
+        </div>
+        <ol class="mtrack" id="mtrack" data-reveal></ol>
+        <p class="mtrack__note mono" id="mtrackNote" data-reveal></p>
+        <div class="phgrid phgrid--site" data-photo-group data-reveal>
+          <figure class="ph ph--wide" data-photo="siteLatest" style="--ar:21 / 9">
+            <div class="ph__frame">
+              <div class="ph__empty">
+                <span class="ph__n mono">PHOTO 08</span>
+                <b class="ph__title">Latest from the site</b>
+                <p class="ph__brief">A dated photo, replaced each time a milestone is verified. Same angle each time works best.</p>
+                <code class="ph__file mono">assets/photos/site-latest.webp</code>
+              </div>
+            </div>
+            <figcaption class="ph__cap mono"><span>08</span><span data-cap>Latest from the site</span></figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ BRICK BY BRICK ============ -->
+    <section class="sec bricks" id="bricks" aria-labelledby="bricksTitle">
+      <div class="container">
+        <div class="shead" data-reveal><span class="mono">SIX / BRICKS</span><i></i><span class="mono">BRICK BY BRICK</span></div>
+        <div class="sec__intro">
+          <h2 class="h2" id="bricksTitle" data-reveal>Brick<br>by brick.</h2>
+          <p class="lede" data-reveal>Every ₦10,000 lays one brick. As Builders contribute, the wall rises — <span data-total-bricks>30,000</span> bricks to build the new Smartan House facility.</p>
+        </div>
+        <div class="bwall" data-reveal>
+          <div class="bwall__head mono">
+            <span><b data-bind="units">0</b> OF <b data-total-bricks>30,000</b> BRICKS LAID</span>
+            <span id="brickScale">EACH BRICK SHOWN = 10 BRICKS</span>
+          </div>
+          <div class="bwall__stage"><canvas id="brickCanvas" role="img" aria-label="Wall of bricks showing how many have been laid"></canvas></div>
+          <div class="bwall__foot mono">
+            <span><b data-bind="bricksLeft">30,000</b> BRICKS TO GO</span>
+            <button class="btn btn--primary btn--sm" data-acquire data-units="1">Lay a brick <span class="arr">→</span></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 05 WHAT ₦300M BUILDS ============ -->
+    <section class="sec budget" id="budget">
+      <div class="container">
+        <div class="shead" data-reveal><span class="mono">SIX / 005</span><i></i><span class="mono">WHAT ₦300M BUILDS</span></div>
+        <div class="sec__intro">
+          <h2 class="h2" data-reveal>What ₦300M<br>builds.</h2>
+          <p class="lede" data-reveal>Every naira is assigned to a part of the facility. The allocation follows Smartan's approved project budget.</p>
+        </div>
+        <div class="alloc" data-reveal>
+          <div class="alloc__bar" id="allocBar"></div>
+          <ol class="alloc__rows" id="allocRows"></ol>
+          <p class="alloc__note mono" id="allocNote"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 06 LIVE CAMPAIGN PROGRESS ============ -->
+    <section class="sec xch" id="progress">
+      <div class="container">
+        <div class="shead" data-reveal><span class="mono">SIX / 006</span><i></i><span class="mono">LIVE CAMPAIGN PROGRESS</span></div>
+        <div class="sec__intro">
+          <h2 class="h2" data-reveal>Live campaign<br>progress.</h2>
+          <p class="lede" data-reveal>Where the campaign stands, as it happens — every Builder, every unit, every naira.</p>
+        </div>
+
+        <div class="term" data-reveal>
+          <div class="term__bar mono">
+            <span class="term__brand">SIX TERMINAL</span>
+            <span class="hide-sm">SH-2026-001</span>
+            <span><i class="live-dot"></i>CAMPAIGN STATUS: LIVE</span>
+            <span class="term__clock"><span data-clock>--:--:--</span> WAT</span>
+          </div>
+          <div class="term__tabs mono" role="tablist" id="termTabs">
+            <button role="tab" aria-selected="true" data-panel="0">Overview</button>
+            <button role="tab" aria-selected="false" data-panel="1">Activity</button>
+            <button role="tab" aria-selected="false" data-panel="2">Daily</button>
+          </div>
+          <div class="term__panels" id="termPanels" data-lenis-prevent-touch>
+            <div class="tp tp--overview">
+              <div class="tp__head mono"><span>CAMPAIGN OVERVIEW</span><span class="dim">SH-2026-001</span></div>
+              <div class="ov">
+                <div class="ov__cell"><span class="label mono">TARGET</span><b class="mono">₦300M</b></div>
+                <div class="ov__cell"><span class="label mono">RAISED</span><b class="mono up" data-bind="raisedM">₦0.00M</b></div>
+                <div class="ov__cell"><span class="label mono">BUILDERS</span><b class="mono" data-bind="builders">0</b></div>
+                <div class="ov__cell"><span class="label mono">BRICKS LAID</span><b class="mono" data-bind="units">0</b></div>
+              </div>
+              <div class="ov__progress">
+                <div class="ov__plabel mono"><span>CAMPAIGN PROGRESS</span><span data-bind="progress">0.00%</span></div>
+                <div class="pbar"><i data-bind-width></i><span style="left:25%"></span><span style="left:50%"></span><span style="left:75%"></span></div>
+              </div>
+              <dl class="ov__stats mono">
+                <div><dt>AVG BRICKS / BUILDER</dt><dd data-bind="avg">0.0</dd></div>
+                <div><dt>NEXT FUNDING LEVEL</dt><dd data-bind-text="nextLevel">₦75M (25%)</dd></div>
+                <div><dt>TO NEXT LEVEL</dt><dd data-bind="toNext">₦75,000,000</dd></div>
+                <div><dt>REMAINING TO TARGET</dt><dd data-bind="remaining">₦300,000,000</dd></div>
+              </dl>
+            </div>
+            <div class="tp tp--activity">
+              <div class="tp__head mono"><span>RECENT BUILDER ACTIVITY</span><span class="live"><i class="live-dot"></i>LIVE</span></div>
+              <ol class="feed" id="feed" aria-live="polite"></ol>
+            </div>
+            <div class="tp tp--flow">
+              <div class="tp__head mono"><span>BRICKS LAID PER DAY</span><span class="dim">LAST 30 DAYS</span></div>
+              <div class="bars" id="flowBars"></div>
+              <div class="bars__axis mono" id="flowAxis"><span></span><span></span><span>TODAY</span></div>
+            </div>
+          </div>
+          <div class="term__dots" id="termDots" aria-hidden="true"><i class="on"></i><i></i><i></i></div>
+        </div>
+
+        <div class="ix" data-reveal>
+          <div class="ix__head">
+            <div>
+              <span class="label mono">IMPACT INDEX</span>
+              <div class="ix__title">Project milestone progress</div>
+            </div>
+            <div class="ix__composite mono"><span id="ixComposite">—</span><small>OVERALL</small></div>
+          </div>
+          <div class="ix__table" role="table" aria-label="Project milestone progress">
+            <div class="ix__row ix__row--h mono" role="row">
+              <span role="columnheader">COMPONENT</span><span role="columnheader">PROGRESS</span><span role="columnheader" class="r">LAST VERIFIED</span>
+            </div>
+            <div id="ixRows"></div>
+          </div>
+          <p class="ix__note mono">PROJECT MILESTONE PROGRESS — NOT A PRICE, NOT A FINANCIAL RETURN.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 08 THE BUILDERS ============ -->
+    <section class="sec builders" id="builders">
+      <div class="container">
+        <div class="shead" data-reveal><span class="mono">SIX / 007</span><i></i><span class="mono">THE BUILDERS</span></div>
+        <div class="sec__intro">
+          <h2 class="h2" data-reveal>The Builders.<br><span class="muted">Thousands of people. One facility.</span></h2>
+          <div class="builders__count" data-reveal>
+            <span class="builders__n mono" data-bind="builders">0</span>
+            <span class="label mono">BUILDERS SO FAR. EACH LIT DOT IS A PERSON.</span>
+          </div>
+        </div>
+        <div class="dots" data-reveal><canvas id="dotsCanvas" aria-hidden="true"></canvas></div>
+        <div class="wall" id="wall"></div>
+        <p class="wall__foot mono" data-reveal>Some Builders choose to be seen. Some choose to stay anonymous. Every one of them counts.</p>
+      </div>
+    </section>
+
+    <!-- ============ 09 TRANSPARENCY ============ -->
+    <section class="sec ledger" id="transparency">
+      <div class="container">
+        <div class="shead" data-reveal><span class="mono">SIX / 008</span><i></i><span class="mono">TRANSPARENCY</span></div>
+        <div class="sec__intro">
+          <h2 class="h2" data-reveal>Follow<br>every naira.</h2>
+          <p class="lede" data-reveal>See what happens to the campaign funds. Every allocation is recorded and verified, then published here for anyone to inspect.</p>
+        </div>
+
+        <div class="lg-grid">
+          <aside class="lsum" data-reveal>
+            <div class="lsum__row"><span class="label mono">TARGET</span><b class="mono">₦300,000,000</b></div>
+            <div class="lsum__row"><span class="label mono">RAISED</span><b class="mono up" data-bind="raised">₦0</b></div>
+            <div class="lsum__row"><span class="label mono">ALLOCATED</span><b class="mono" id="lsAllocated">—</b><small class="mono" id="lsAllocatedNote"></small></div>
+            <div class="lsum__row"><span class="label mono">SPENT</span><b class="mono" id="lsSpent">—</b><small class="mono" id="lsSpentNote"></small></div>
+            <div class="lsum__row"><span class="label mono">REMAINING TO TARGET</span><b class="mono" data-bind="remaining">₦300,000,000</b></div>
+          </aside>
+
+          <div class="ltable" data-reveal>
+            <div class="ltable__head">
+              <span class="mono">CAMPAIGN LEDGER</span>
+              <div class="lfilters mono" id="lFilters" role="group" aria-label="Filter ledger"></div>
+            </div>
+            <div class="lrow lrow--h mono"><span>DATE</span><span>REF</span><span>ALLOCATION</span><span class="r">AMOUNT</span><span class="r">STATUS</span></div>
+            <ol id="ledgerRows" class="is-collapsed"></ol>
+            <button type="button" class="btn btn--ghost btn--block ltable__cta" id="ledgerMore" aria-controls="ledgerRows" aria-expanded="false"><span class="ltable__cta-t">View transparency ledger</span> <span class="arr">→</span></button>
+          </div>
+
+          <div class="updates" data-reveal>
+            <span class="label mono">VERIFIED CAMPAIGN UPDATES</span>
+            <ol id="updates"></ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PARTICIPATE: IMPACT UNITS ============ -->
+    <section class="sec units" id="participate">
+      <div class="container units__grid">
+        <div class="units__left">
+          <div class="shead" data-reveal><span class="mono">SIX / 009</span><i></i><span class="mono">BECOME A BUILDER</span></div>
+          <h2 class="h2" data-reveal>Every brick<br>tells a story.</h2>
+          <p class="lede" data-reveal>Every ₦10,000 is one Impact Unit — one brick in the new Smartan House facility. The more you give, the more of the building you lay.</p>
+
+          <figure class="unit-card" data-reveal>
+            <img src="assets/impact-card.webp" alt="Smartan Impact Exchange card: 1 Brick, ₦10,000, Series SH-2026-001, The Smartan House logo, Campaign contribution, not a security" class="unit-card__img" width="1064" height="581" loading="lazy">
+          </figure>
+
+          <ol class="steps" data-stagger="80">
+            <li data-reveal><span class="mono">01</span><b>Choose your bricks</b><p>From ₦10,000 — one brick.</p></li>
+            <li data-reveal><span class="mono">02</span><b>Add your details</b><p>Name and email for your receipt.</p></li>
+            <li data-reveal><span class="mono">03</span><b>Pay securely</b><p>Card, bank transfer or USSD.</p></li>
+            <li data-reveal><span class="mono">04</span><b>Become a Builder</b><p>Your Builder ID and digital receipt.</p></li>
+          </ol>
+          <p class="steps__note mono" data-reveal>NO ACCOUNT. NO PASSWORD. ABOUT A MINUTE.</p>
+        </div>
+
+        <div class="units__right">
+          <div class="tiers" data-stagger="80">
+            <button class="tier" data-units="1" data-reveal><span class="tier__n mono">₦10,000</span><span class="tier__u"><b>1</b> Brick</span><span class="tier__s mono"></span><span class="arr">→</span></button>
+            <button class="tier" data-units="5" data-reveal><span class="tier__n mono">₦50,000</span><span class="tier__u"><b>5</b> Bricks</span><span class="tier__s mono"></span><span class="arr">→</span></button>
+            <button class="tier" data-units="10" data-reveal><span class="tier__n mono">₦100,000</span><span class="tier__u"><b>10</b> Bricks</span><span class="tier__s mono"></span><span class="arr">→</span></button>
+            <button class="tier" data-units="100" data-reveal><span class="tier__n mono">₦1,000,000</span><span class="tier__u"><b>100</b> Bricks</span><span class="tier__s mono"></span><span class="arr">→</span></button>
+          </div>
+
+          <div class="calc" data-reveal>
+            <div class="calc__head mono"><span>CHOOSE YOUR OWN</span><span>1 BRICK = ₦10,000</span></div>
+            <label class="calc__label" for="calcRange"><span class="mono">BRICKS</span><output class="mono" id="calcUnits">25</output></label>
+            <input type="range" id="calcRange" min="1" max="500" value="25" step="1">
+            <div class="calc__out mono">
+              <div><span>CONTRIBUTION</span><b id="calcNaira">₦250,000</b></div>
+              <div><span>SHARE OF TARGET</span><b id="calcShare">0.125%</b></div>
+              <div><span>YOU'D BE BUILDER</span><b id="calcId">#000001</b></div>
+            </div>
+            <button class="btn btn--primary btn--lg btn--block" id="calcCta" data-acquire>Become a Builder <span class="arr">→</span></button>
+          </div>
+          <p class="fine" data-reveal>Impact Units are campaign contribution units. They are not shares, securities or investment products, and carry no ownership, dividends, returns or resale value.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ QUESTIONS ============ -->
+    <section class="sec faq" id="faq">
+      <div class="container faq__grid">
+        <div>
+          <div class="shead" data-reveal><span class="mono">SIX / 010</span><i></i><span class="mono">QUESTIONS</span></div>
+          <h2 class="h2" data-reveal>Straight<br>answers.</h2>
+        </div>
+        <div class="faq__list" data-reveal>
+          <details open><summary>What are you raising money for?</summary><p>The new Smartan House facility and the Acorn Incubator Hub. Nothing else — this campaign funds one facility.</p></details>
+          <details><summary>How much?</summary><p>₦300,000,000 — 30,000 bricks of ₦10,000 each.</p></details>
+          <details><summary>Why?</summary><p>To expand Smartan's ability to support exceptional young people, particularly those from underserved communities, with a permanent home to live, learn and launch.</p></details>
+          <details><summary>Where does the money go?</summary><p>Into the facility, following Smartan's approved project budget. You can see the <a href="#budget">allocation</a> and every verified entry in the <a href="#transparency">transparency ledger</a>.</p></details>
+          <details><summary>How much has been raised?</summary><p>The live, verified figure is at the top of this page: <b data-bind="raised">₦0</b> of ₦300,000,000.</p></details>
+          <details><summary>What happens after I contribute?</summary><p>You become a Builder and your bricks are laid on the wall. You receive a Builder ID, your Impact Units and a digital receipt — plus a Builder card you can share.</p></details>
+          <details><summary>What is the minimum?</summary><p>₦10,000 — one brick. There is no maximum.</p></details>
+          <details><summary>Do I need an account?</summary><p>No. Choose an amount, add your name and email, and pay. That's it.</p></details>
+          <details><summary>Is this an investment?</summary><p>No. Impact Units are campaign contribution units, not financial securities. They carry no ownership, dividends, returns or resale value.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CINEMATIC ============ -->
+    <section class="cinema theme-dark" id="cinema" aria-label="A building. A community. A generation. A future. Built together.">
+      <div class="cinema__sticky">
+        <div class="cinema__words" aria-hidden="true">
+          <span class="cw">A building.</span>
+          <span class="cw">A community.</span>
+          <span class="cw">A generation.</span>
+          <span class="cw">A future.</span>
+          <span class="cw cw--final">Built together.</span>
+        </div>
+        <div class="cinema__meta mono"><span>SIX / 011</span><i id="cinemaBar"></i></div>
+      </div>
+    </section>
+
+    <!-- ============ 10 FINAL CTA ============ -->
+    <section class="sec final" id="final">
+      <div class="container">
+        <div class="final__eyebrow mono" data-reveal><i class="live-dot"></i>SMARTAN HOUSE FACILITY CAMPAIGN</div>
+        <h2 class="final__title" data-reveal>A new home for<br>the next generation.</h2>
+        <p class="lede final__lede" data-reveal>Built together — by Builders.</p>
+        <div class="final__ctas" data-reveal>
+          <button class="btn btn--primary btn--lg" data-acquire>Become a Builder <span class="arr">→</span></button>
+          <a class="btn btn--ghost btn--lg" href="#facility">See the facility <span class="arr">→</span></a>
+        </div>
+
+        <div class="goal" data-reveal>
+          <div class="goal__top mono">
+            <span><b>₦300,000,000</b> TARGET</span>
+            <span><b data-bind="raisedM">₦0.00M</b> RAISED · <b data-bind="progress">0.00%</b></span>
+          </div>
+          <div class="goal__bar"><i data-bind-width></i></div>
+          <div class="goal__ticks mono">
+            <span style="left:25%">25%</span>
+            <span style="left:50%">50%</span>
+            <span style="left:75%">75%</span>
+            <span style="left:100%">FACILITY READY</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="foot">
+    <div class="container">
+      <div class="foot__top">
+        <div class="foot__brand">
+          <div class="brand brand--lg"><span class="logo logo--lg" role="img" aria-label="The Smartan House"><img class="logo__mark" src="assets/logo-icon.png" alt="" width="108" height="45"><img class="logo__word" src="assets/logo-icon.png" alt="" width="108" height="45"></span><span class="brand__six mono">SIX</span></div>
+          <p class="mono">SMARTAN IMPACT EXCHANGE</p>
+          <p class="foot__by">The Smartan House facility campaign.</p>
+        </div>
+        <nav class="foot__nav" aria-label="Footer">
+          <a href="#vision">Vision</a>
+          <a href="#facility">Facility</a>
+          <a href="#build">The Build</a>
+          <a href="#progress">Progress</a>
+          <a href="#transparency">Transparency</a>
+          <a href="#faq">Questions</a>
+        </nav>
+        <div class="foot__status mono">
+          <span><i class="live-dot"></i><span data-market-status>CAMPAIGN LIVE</span></span>
+          <span>CAMPAIGN ID: SH-2026-001</span>
+          <span><span data-clock>--:--:--</span> WAT</span>
+        </div>
+      </div>
+      <p class="foot__disc">Impact Units are campaign contribution units and are not financial securities or investment products. They carry no ownership, dividends, returns or resale value.</p>
+      <div class="foot__bottom mono">
+        <span>© 2026 Smartan House. All rights reserved.</span>
+        <nav class="foot__legal" aria-label="Legal"><a href="/terms">Terms of Contribution</a><a href="/privacy">Privacy Policy</a></nav>
+        <span>SIX / 012 — END OF FEED</span>
+      </div>
+    </div>
+    <div class="foot__mark" aria-hidden="true">SMARTAN</div>
+  </footer>
+
+  <!-- mobile: the CTA stays within reach -->
+  <div class="mbar" id="mbar" aria-hidden="true">
+    <div class="mbar__info mono"><b data-bind="raisedM">₦0.00M</b><span>OF ₦300M</span><i class="mbar__bar"><i data-bind-width></i></i></div>
+    <button class="btn btn--primary" data-acquire tabindex="-1">Become a Builder</button>
+  </div>
+
+  <!-- ============ CONTRIBUTION FLOW ============ -->
+  <dialog class="acq" id="acquire" aria-labelledby="acqTitle">
+    <div class="acq__panel">
+      <div class="acq__head mono">
+        <span>BECOME A BUILDER</span>
+        <button type="button" class="acq__close" data-close aria-label="Close">✕</button>
+      </div>
+      <ol class="acq__steps mono" id="acqSteps" aria-label="Progress">
+        <li class="is-on">01 Amount</li><li>02 Details</li><li>03 Payment</li><li>04 Builder</li>
+      </ol>
+
+      <!-- step 1 -->
+      <form class="acq__step" data-step="1" id="acqStep1" novalidate>
+        <h3 class="acq__title" id="acqTitle">Choose your contribution</h3>
+        <p class="acq__sub">Every ₦10,000 lays one brick. Minimum ₦10,000. No account needed.</p>
+        <div class="acq__chips mono" id="acqChips">
+          <button type="button" data-units="1">₦10k</button>
+          <button type="button" data-units="5">₦50k</button>
+          <button type="button" data-units="10" class="is-on">₦100k</button>
+          <button type="button" data-units="100">₦1M</button>
+        </div>
+        <label class="field">
+          <span class="mono">BRICKS <em>(₦10,000 EACH)</em></span>
+          <input type="number" id="acqUnits" min="1" max="30000" step="1" value="10" inputmode="numeric" required>
+        </label>
+        <div class="acq__bricks" id="acqBricks" aria-hidden="true"></div>
+        <dl class="acq__sum mono">
+          <div><dt>BRICKS</dt><dd id="acqUnitsOut">10</dd></div>
+          <div><dt>SHARE OF TARGET</dt><dd id="acqShare">0.05%</dd></div>
+          <div><dt>YOU'D BE</dt><dd id="acqId">#000001</dd></div>
+          <div class="acq__total"><dt>TOTAL</dt><dd id="acqTotal">₦100,000</dd></div>
+        </dl>
+        <button type="submit" class="btn btn--primary btn--lg btn--block">Continue <span class="arr">→</span></button>
+        <p class="acq__notice mono" data-notice role="status"></p>
+      </form>
+
+      <!-- step 2 -->
+      <form class="acq__step" data-step="2" id="acqStep2" novalidate hidden>
+        <h3 class="acq__title">Your details</h3>
+        <p class="acq__sub">For your receipt. We never ask you to create an account. <a href="/privacy" target="_blank" rel="noopener">How we use your details</a></p>
+        <div class="acq__fields">
+          <label class="field"><span class="mono">FULL NAME</span><input type="text" id="acqName" maxlength="60" autocomplete="name" required placeholder="e.g. Richard Omole"></label>
+          <label class="field"><span class="mono">EMAIL <em>(FOR YOUR RECEIPT)</em></span><input type="email" id="acqEmail" maxlength="120" autocomplete="email" required placeholder="you@example.com"></label>
+          <label class="field"><span class="mono">PHONE <em>(OPTIONAL)</em></span><input type="tel" id="acqPhone" maxlength="20" autocomplete="tel" inputmode="tel" placeholder="+234"></label>
+          <label class="field"><span class="mono">CITY <em>(OPTIONAL)</em></span><input type="text" id="acqCity" maxlength="40" autocomplete="address-level2" placeholder="e.g. Lagos, Nigeria"></label>
+        </div>
+        <fieldset class="acq__display">
+          <legend class="mono">ON THE BUILDER WALL, SHOW</legend>
+          <label class="radio"><input type="radio" name="display" value="name" checked><span></span>My first name and initial</label>
+          <label class="radio"><input type="radio" name="display" value="anonymous"><span></span>Anonymous — just my Builder number</label>
+        </fieldset>
+        <div class="acq__nav">
+          <button type="button" class="btn btn--ghost btn--lg" data-back>Back</button>
+          <button type="submit" class="btn btn--primary btn--lg">Continue to payment <span class="arr">→</span></button>
+        </div>
+        <p class="acq__notice mono" data-notice role="status"></p>
+      </form>
+
+      <!-- step 3 -->
+      <form class="acq__step" data-step="3" id="acqStep3" novalidate hidden>
+        <h3 class="acq__title">Payment</h3>
+        <dl class="acq__review mono" id="acqReview"></dl>
+        <label class="check"><input type="checkbox" id="acqAgree" required><span></span>I understand Impact Units are a campaign contribution — not an investment, security or ownership — and I agree to the <a href="/terms" target="_blank" rel="noopener">Terms of Contribution</a>.</label>
+        <div class="acq__nav">
+          <button type="button" class="btn btn--ghost btn--lg" data-back>Back</button>
+          <button type="submit" class="btn btn--primary btn--lg" id="acqPay">Pay <span id="acqPayAmt">₦100,000</span> securely</button>
+        </div>
+        <p class="acq__verify mono" id="acqVerify" hidden><i class="spin"></i>Verifying payment…</p>
+        <p class="acq__notice mono" data-notice role="status"></p>
+      </form>
+
+      <!-- step 4 -->
+      <div class="acq__step" data-step="4" hidden>
+        <h3 class="acq__title">Welcome, Builder.</h3>
+        <p class="acq__sub" id="acqWelcome">You're now part of building the new Smartan House facility.</p>
+        <div class="bc" id="bcard" role="img" aria-label="Your Builder card">
+          <div class="bc__in">
+            <div class="bc__top">
+              <span class="bc__brand">SMARTAN IMPACT EXCHANGE</span>
+              <img class="bc__logo" src="assets/logo-mark.png" alt="" width="64" height="64">
+            </div>
+            <div class="bc__mid">
+              <div>
+                <p class="bc__im">I'm a<br>Builder.</p>
+                <p class="bc__name" id="bcName"></p>
+              </div>
+              <svg class="bc__wall" id="bcWall" viewBox="0 0 130 53" aria-hidden="true"></svg>
+            </div>
+            <div class="bc__rule"></div>
+            <dl class="bc__stats">
+              <div><dt>BUILDER</dt><dd class="is-accent" id="bcId">#000001</dd></div>
+              <div><dt>BRICKS LAID</dt><dd id="bcUnits">1</dd></div>
+              <div><dt>SINCE</dt><dd id="bcDate">SEP 2026</dd></div>
+            </dl>
+            <div class="bc__foot"><span>THE NEW SMARTAN HOUSE</span><span id="bcSite">smartanhouse.org</span></div>
+          </div>
+        </div>
+        <dl class="acq__receipt mono" id="acqReceipt"></dl>
+        <div class="share">
+          <a class="btn btn--primary btn--lg" id="shareWa" href="#" target="_blank" rel="noopener">Share on WhatsApp</a>
+          <a class="btn btn--ghost btn--lg" id="shareX" href="#" target="_blank" rel="noopener">Share on X</a>
+          <button class="btn btn--ghost btn--lg" id="shareCopy" type="button">Copy link</button>
+          <button class="btn btn--ghost btn--lg" id="shareDl" type="button">Download card</button>
+        </div>
+        <p class="fine" id="acqReceiptNote">Your official receipt is sent to your email. Impact Units are campaign contribution units, not securities.</p>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast mono" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>
+  <script src="js/animations.js" defer></script>
+  <script src="js/main.js" defer></script>
+</body>
+</html>
