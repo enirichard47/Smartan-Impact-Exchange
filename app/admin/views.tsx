@@ -8,6 +8,8 @@ import {
 } from './actions';
 import { lastDailyRun } from '@/lib/automation';
 import { ConfirmButton } from './confirm-button';
+import { CopyButton } from './copy-button';
+import { DetailsDrawer, type Details } from './details-drawer';
 import { SubmitButton } from './submit-button';
 import { ActionForm } from './action-form';
 import { NumberField, Select } from './fields';
@@ -119,15 +121,15 @@ export async function Overview() {
 
       <Card title="Latest Builders" meta={<a className="ad-link" href="/admin?view=contributions">View all →</a>} flush>
         {recent.data?.length ? (
-          <table className="ad-table">
+          <table className="ad-table ad-table--cards">
             <thead><tr><th>Builder</th><th>Name</th><th>City</th><th className="r">Bricks</th><th className="r">Amount</th><th className="r">Paid</th></tr></thead>
             <tbody>
               {recent.data.map((c: any) => {
                 const b = Array.isArray(c.builders) ? c.builders[0] : c.builders;
                 return (
                   <tr key={c.reference}>
-                    <td className="mono">{b ? builderId(b.number) : '-'}</td><td>{c.name}</td><td className="dim">{c.city || '-'}</td>
-                    <td className="r mono">{num(c.units)}</td><td className="r mono">{naira(c.amount_kobo)}</td><td className="r dim">{when(c.paid_at)}</td>
+                    <td data-label="Builder" className="mono">{b ? builderId(b.number) : '-'}</td><td data-label="Name">{c.name}</td><td data-label="City" className="dim">{c.city || '-'}</td>
+                    <td data-label="Bricks" className="r mono">{num(c.units)}</td><td data-label="Amount" className="r mono">{naira(c.amount_kobo)}</td><td data-label="Paid" className="r dim">{when(c.paid_at)}</td>
                   </tr>
                 );
               })}
@@ -141,6 +143,8 @@ export async function Overview() {
 
 /* ========================== CONTRIBUTIONS ========================== */
 const PAGE = 50;
+// "SIX-MUO753Q0-D332FFDC46" -> "SIX-MUO75…FC46" (the full reference shows on hover and in the details)
+const shortRef = (r: string) => (r.length > 16 ? `${r.slice(0, 9)}…${r.slice(-4)}` : r);
 export async function Contributions({ status, q, page, receipt }: { status: string; q: string; page: number; receipt?: string }) {
   const safeQ = q.replace(/[^\p{L}\p{N}@.\-_ ]/gu, '').trim().slice(0, 60);
   const [cSuccess, cPending, cFailed] = await Promise.all([
@@ -182,29 +186,59 @@ export async function Contributions({ status, q, page, receipt }: { status: stri
       {receipt === 'unsent' ? <div className="ad-filter">Showing only confirmed payments whose receipt was not emailed. <a className="ad-link" href={`/admin?view=contributions&status=${status}`}>Clear</a></div> : null}
       {data?.length ? (
         <div className="ad-scroll">
-          <table className="ad-table">
-            <thead><tr><th>Date</th><th>Builder</th><th>Name</th><th>Email</th><th>Phone</th><th>City</th><th className="r">Bricks</th><th className="r">Amount</th><th>Channel</th><th>Receipt no.</th><th>Emailed</th><th>Paystack ref</th></tr></thead>
+          <table className="ad-table ad-table--cards ad-table--rows">
+            <thead><tr><th>Date</th><th>Donor</th><th>City</th><th className="r">Bricks and amount</th><th>Builder and receipt</th><th>Payment</th><th>Status</th></tr></thead>
             <tbody>
               {data.map((c: any) => {
                 const b = Array.isArray(c.builders) ? c.builders[0] : c.builders;
+                const at = c.paid_at || c.created_at;
+                const rn = receiptNo(c.receipt_number);
+                const state = c.status === 'success' ? (c.receipt_sent_at ? 'Confirmed, receipt emailed' : 'Confirmed, receipt not emailed yet') : c.status === 'pending' ? 'Pending' : 'Failed';
+                const pill = c.status === 'success'
+                  ? (c.receipt_sent_at ? <Pill tone="success">Emailed</Pill> : <Pill tone="pending">Not emailed</Pill>)
+                  : c.status === 'pending' ? <Pill tone="pending">Pending</Pill> : <Pill tone="failed">Failed</Pill>;
+                const details: Details = {
+                  title: c.name,
+                  subtitle: `${naira(c.amount_kobo)} for ${num(c.units)} brick${c.units === 1 ? '' : 's'}`,
+                  rows: [
+                    ['Date', when(at)], ['Status', state],
+                    ['Name', c.name], ['Shown publicly', c.display === 'anonymous' ? 'Anonymous' : 'By first name and initial'],
+                    ['Email', c.email, true], ['Phone', c.phone || '', true], ['City', c.city || ''],
+                    ['Bricks', num(c.units)], ['Amount', naira(c.amount_kobo)],
+                    ['Builder', b ? builderId(b.number) : '', true], ['Receipt number', rn || '', true],
+                    ['Payment channel', c.channel || ''], ['Paystack reference', c.reference, true],
+                  ],
+                };
                 return (
-                  <tr key={c.reference}>
-                    <td className="dim nowrap">{when(c.paid_at || c.created_at)}</td>
-                    <td className="mono">{b ? builderId(b.number) : '-'}</td>
-                    <td className="nowrap">{c.name}{c.display === 'anonymous' ? <Pill tone="neutral">Anonymous</Pill> : null}</td>
-                    <td>{c.email}</td><td className="dim">{c.phone || '-'}</td><td className="dim">{c.city || '-'}</td>
-                    <td className="r mono">{num(c.units)}</td><td className="r mono">{naira(c.amount_kobo)}</td>
-                    <td className="dim">{c.channel || '-'}</td>
-                    <td className="mono nowrap">{receiptNo(c.receipt_number) || '-'}</td>
-                    <td>{c.status === 'success' ? (c.receipt_sent_at ? <Pill tone="success">Sent</Pill> : <Pill tone="pending">Not sent</Pill>) : c.status === 'pending' ? <Pill tone="pending">Pending</Pill> : <Pill tone="failed">Failed</Pill>}</td>
-                    <td className="mono dim">{c.reference}</td>
+                  <tr key={c.reference} data-details={JSON.stringify(details)} tabIndex={0} aria-label={`${c.name}, ${naira(c.amount_kobo)}. Press Enter for details`}>
+                    <td data-label="Date"><div className="ad-stack"><span>{watDate(at)}</span><span className="dim mono">{watTime(at)}</span></div></td>
+                    <td data-label="Donor"><div className="ad-stack">
+                      <b>{c.name}{c.display === 'anonymous' ? <Pill tone="neutral">Anonymous</Pill> : null}</b>
+                      <span className="ad-break">{c.email}</span>
+                      {c.phone ? <span className="dim mono">{c.phone}</span> : null}
+                    </div></td>
+                    <td data-label="City" className="dim">{c.city || '-'}</td>
+                    <td data-label="Bricks and amount" className="r"><div className="ad-stack ad-stack--r">
+                      <b className="mono">{num(c.units)} brick{c.units === 1 ? '' : 's'}</b>
+                      <span className="mono dim">{naira(c.amount_kobo)}</span>
+                    </div></td>
+                    <td data-label="Builder and receipt"><div className="ad-stack">
+                      <span className="mono">{b ? builderId(b.number) : '-'}</span>
+                      <span className="mono dim">{rn || '-'}</span>
+                    </div></td>
+                    <td data-label="Payment"><div className="ad-stack">
+                      <span>{c.channel ? c.channel.replace(/_/g, ' ') : '-'}</span>
+                      <span className="ad-ref"><code title={c.reference}>{shortRef(c.reference)}</code><CopyButton value={c.reference} label="Copy Paystack reference" /></span>
+                    </div></td>
+                    <td data-label="Status">{pill}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+          <DetailsDrawer />
         </div>
-      ) : <Empty title={safeQ ? 'No matches.' : 'Nothing here yet.'}>{safeQ ? 'Try a different name, email, receipt number or reference.' : 'Contributions appear here as soon as Builders start paying.'}</Empty>}
+      ) :<Empty title={safeQ ? 'No matches.' : 'Nothing here yet.'}>{safeQ ? 'Try a different name, email, receipt number or reference.' : 'Contributions appear here as soon as Builders start paying.'}</Empty>}
       <footer className="ad-pager">
         <span>{num(total || 0)} {total === 1 ? 'contribution' : 'contributions'}</span>
         <div>
@@ -244,15 +278,15 @@ export async function Ledger() {
       </Card>
       <Card title="Ledger" meta={<span className="mono">{rows.length} entries · {naira(total)}</span>} flush>
         {rows.length ? (
-          <table className="ad-table">
-            <thead><tr><th>Date</th><th>Reference</th><th>Category</th><th>Detail</th><th>Source</th><th className="r">Amount</th><th /></tr></thead>
+          <table className="ad-table ad-table--cards">
+            <thead><tr><th>Date</th><th>Reference</th><th>Category</th><th>Detail</th><th>Source</th><th className="r">Amount</th><th><span className="sr-only">Actions</span></th></tr></thead>
             <tbody>
               {rows.map(l => (
                 <tr key={l.id}>
-                  <td className="dim nowrap">{watDate(l.entry_date)}</td><td className="mono">{l.ref}</td>
-                  <td><Pill tone="accent">{cats.find(c => c.key === l.category)?.label || l.category}</Pill></td>
-                  <td>{l.detail}</td><td className="mono dim">{l.source_doc || '-'}</td><td className="r mono">{naira(l.amount_kobo)}</td>
-                  <td className="r"><form action={deleteLedger}><input type="hidden" name="id" value={l.id} /><ConfirmButton message={`Delete ledger entry ${l.ref}? It will disappear from the public page.`}>Delete</ConfirmButton></form></td>
+                  <td data-label="Date" className="dim nowrap">{watDate(l.entry_date)}</td><td data-label="Reference" className="mono">{l.ref}</td>
+                  <td data-label="Category"><Pill tone="accent">{cats.find(c => c.key === l.category)?.label || l.category}</Pill></td>
+                  <td data-label="Detail">{l.detail}</td><td data-label="Source" className="mono dim">{l.source_doc || '-'}</td><td data-label="Amount" className="r mono">{naira(l.amount_kobo)}</td>
+                  <td data-label="" className="r"><form action={deleteLedger}><input type="hidden" name="id" value={l.id} /><ConfirmButton message={`Delete ledger entry ${l.ref}? It will disappear from the public page.`}>Delete</ConfirmButton></form></td>
                 </tr>
               ))}
             </tbody>
