@@ -1,4 +1,4 @@
-import { env, CAMPAIGN } from './env';
+import { env, CAMPAIGN, hasEmail } from './env';
 import { builderId, firstName, naira, num, plural, receiptNo, watDate, watTime } from './format';
 
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
@@ -15,11 +15,24 @@ export type Receipt = {
   paidAt: string;
 };
 
-// Sends the Builder receipt through Resend. Returns false (without throwing)
-// when email is not configured, so a missing key never blocks a payment.
-export async function sendReceipt(r: Receipt): Promise<boolean> {
-  if (!env.resendKey || !env.receiptFrom) return false;
+// What happened to one receipt email:
+//   sent  - Brevo accepted it
+//   off   - email is not set up (no BREVO_API_KEY / RECEIPT_FROM)
+//   quota - Brevo's daily sending limit is used up; the daily job sends it tomorrow
+//   error - anything else (the admin sees it in System alerts)
+export type SendResult = { status: 'sent' | 'off' | 'quota' | 'error'; detail?: string };
+
+// 'Smartan House <builders@smartanhouse.org>' -> { name, email }
+function parseAddress(v: string) {
+  const m = /^\s*(.*?)\s*<\s*([^>]+?)\s*>\s*$/.exec(v);
+  return m ? { name: m[1].replace(/^"|"$/g, '') || undefined, email: m[2] } : { email: v.trim() };
+}
+
+// Sends the Builder receipt through Brevo. Never throws, so email can never block a payment.
+export async function sendReceipt(r: Receipt): Promise<SendResult> {
+  if (!hasEmail()) return { status: 'off' };
   const card = `${env.siteUrl}/builder/${r.builderNumber}`;
+  const cardImage = `${card}/opengraph-image`;
   const rn = receiptNo(r.receiptNumber);
   const rows: [string, string][] = [
     ...(rn ? [['Receipt number', rn] as [string, string]] : []),
@@ -48,20 +61,56 @@ export async function sendReceipt(r: Receipt): Promise<boolean> {
           ${rows.map(([k, v]) => `<tr><td style="padding:10px 0;border-bottom:1px solid #e5e9ee;color:#5c6571">${k}</td><td align="right" style="padding:10px 0;border-bottom:1px solid #e5e9ee;font-family:Menlo,Consolas,monospace">${esc(v)}</td></tr>`).join('')}
         </table>
         <p style="margin:24px 0 0"><a href="${card}" style="display:inline-block;background:#0076c6;color:#ffffff;text-decoration:none;font-weight:600;font-size:13px;letter-spacing:1px;padding:14px 22px">VIEW AND SHARE YOUR BUILDER CARD</a></p>
+        <p style="margin:12px 0 0;font-size:13px"><a href="${cardImage}" style="color:#0076c6">Download your Builder card as an image</a></p>
         <p style="margin:24px 0 0;font-size:12px;line-height:1.6;color:#5c6571">Impact Units are campaign contribution units. They are not shares, securities or investment products, and carry no ownership, dividends, returns or resale value.</p>
       </td></tr>
     </table>
   </td></tr></table></body></html>`;
 
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${env.resendKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: env.receiptFrom,
-      to: [r.email],
-      subject: `Your Builder receipt: ${rn || builderId(r.builderNumber)}`,
-      html,
-    }),
-  });
-  return res.ok;
+  try {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { 'api-key': env.brevoKey, 'Content-Type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({
+        sender: parseAddress(env.receiptFrom),
+        to: [{ email: r.email, name: r.name }],
+        ...(env.replyTo ? { replyTo: parseAddress(env.replyTo) } : {}),
+        subject: `Your Builder receipt: ${rn || builderId(r.builderNumber)}`,
+        htmlContent: html,
+        tags: ['receipt'],
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (res.ok) return { status: 'sent' };
+    const body = await res.text().catch(() => '');
+    // Brevo answers 402 (no credits left) or 429 (too many requests) when the daily
+    // allowance is used up; either way the receipt simply waits for the next run
+    if (res.status === 402 || res.status === 429 || /credit|quota|limit/i.test(body)) {
+      return { status: 'quota', detail: `${res.status} ${body.slice(0, 200)}` };
+    }
+    return { status: 'error', detail: `${res.status} ${body.slice(0, 200)}` };
+  } catch (e) {
+    return { status: 'error', detail: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+// A small call that sends no email: it confirms the key still works and counts
+// as activity, so Brevo never retires the key for being unused (90 days).
+export async function checkEmailService(): Promise<{ ok: boolean; detail: string }> {
+  if (!hasEmail()) return { ok: false, detail: 'Email is not set up (BREVO_API_KEY and RECEIPT_FROM).' };
+  try {
+    const res = await fetch('https://api.brevo.com/v3/account', {
+      headers: { 'api-key': env.brevoKey, accept: 'application/json' },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (res.ok) return { ok: true, detail: 'Brevo key works.' };
+    return {
+      ok: false,
+      detail: res.status === 401
+        ? 'Brevo rejected the API key (expired or revoked). Create a new key in Brevo and update BREVO_API_KEY.'
+        : `Brevo answered ${res.status}.`,
+    };
+  } catch (e) {
+    return { ok: false, detail: `Brevo did not respond: ${e instanceof Error ? e.message : String(e)}` };
+  }
 }

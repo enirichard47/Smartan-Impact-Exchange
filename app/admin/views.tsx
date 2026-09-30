@@ -1,11 +1,15 @@
+import { CLEAR_PHRASE } from '@/lib/admin';
 import { db } from '@/lib/db';
-import { CAMPAIGN } from '@/lib/env';
+import { CAMPAIGN, hasEmail } from '@/lib/env';
 import { builderId, naira, num, receiptNo, watDate, watTime } from '@/lib/format';
 import {
   addLedger, addUpdate, deleteLedger, deleteUpdate,
-  saveBudgetLine, saveIndex, saveMilestone, saveTotals,
+  clearAll, runDailyNow, saveBudgetLine, saveIndex, saveMilestone, saveOpening, saveTotals, sendReceiptsNow,
 } from './actions';
+import { lastDailyRun } from '@/lib/automation';
 import { ConfirmButton } from './confirm-button';
+import { SubmitButton } from './submit-button';
+import { ActionForm } from './action-form';
 import { NumberField, Select } from './fields';
 
 const STATUS_OPTIONS = [
@@ -25,14 +29,30 @@ async function totals(): Promise<Totals> {
   const { data } = await db().from('campaign_totals').select('*').single();
   return (data as Totals) || { raised_kobo: 0, builders: 0, units: 0, updated_at: null };
 }
+// the campaign starting amount, in kobo (added to the public raised total)
+async function openingKobo() {
+  const { data } = await db().from('settings').select('value').eq('key', 'opening_kobo').maybeSingle();
+  return Number(data?.value) || 0;
+}
 const count = async (build: (q: any) => any) => {
   const { count: c } = await build(db().from('contributions').select('id', { count: 'exact', head: true }));
   return c || 0;
 };
 
+// problems recorded by lib/report.ts; empty if the table is not set up yet
+type Alert = { id: number; at: string; source: string; message: string; detail: string | null };
+const ALERT_LABEL: Record<string, string> = { payments: 'Payments', email: 'Email', database: 'Database', admin: 'Admin' };
+async function systemAlerts(): Promise<Alert[]> {
+  const since = new Date(Date.now() - 7 * 864e5).toISOString();
+  const { data, error } = await db().from('system_log').select('*').gte('at', since).order('at', { ascending: false }).limit(20);
+  return error ? [] : (data as Alert[]) || [];
+}
+
+const unsentReceipts = () => count(q => q.eq('status', 'success').is('receipt_sent_at', null));
+
 /* ============================ OVERVIEW ============================ */
 export async function Overview() {
-  const [t, pending, failed, unsent, daily, recent, milestones] = await Promise.all([
+  const [t, pending, failed, unsent, daily, recent, milestones, opening, alerts, lastRun] = await Promise.all([
     totals(),
     count(q => q.eq('status', 'pending')),
     count(q => q.eq('status', 'failed')),
@@ -40,8 +60,14 @@ export async function Overview() {
     db().rpc('daily_bricks', { p_days: 30 }),
     db().from('contributions').select('reference, units, amount_kobo, name, city, paid_at, builders(number)').eq('status', 'success').order('paid_at', { ascending: false }).limit(8),
     db().from('milestones').select('*').order('position'),
+    openingKobo(),
+    systemAlerts(),
+    lastDailyRun(),
   ]);
-  const raisedPct = pct(Number(t.raised_kobo), CAMPAIGN.targetKobo);
+  const runAge = lastRun ? Date.now() - new Date(lastRun.at).getTime() : Infinity;
+  const runStale = runAge > 36 * 3600e3;   // it runs every 24 h; 36 h without one means it stopped
+  const raised = Number(t.raised_kobo) + opening;
+  const raisedPct = pct(raised, CAMPAIGN.targetKobo);
   const days = ((daily.data || []) as { day: string; units: number }[]).map(d => ({ day: String(d.day), units: Number(d.units) }));
   const last30 = days.reduce((s, d) => s + d.units, 0);
   const ms = milestones.data || [];
@@ -50,7 +76,7 @@ export async function Overview() {
   return (
     <>
       <div className="ad-kpis">
-        <Kpi label="Raised" value={naira(t.raised_kobo)} sub={`${raisedPct.toFixed(2)}% of ${naira(CAMPAIGN.targetKobo)}`} progress={raisedPct} />
+        <Kpi label="Raised" value={naira(raised)} sub={`${raisedPct.toFixed(2)}% of ${naira(CAMPAIGN.targetKobo)}${opening ? `, incl. ${naira(opening)} starting amount` : ''}`} progress={raisedPct} />
         <Kpi label="Builders" value={num(t.builders)} sub={t.updated_at ? `Last payment ${when(t.updated_at)}` : 'No payments yet'} />
         <Kpi label="Bricks laid" value={num(Number(t.units))} sub={`of ${num(CAMPAIGN.targetKobo / CAMPAIGN.unitPriceKobo)}`} progress={pct(Number(t.units), CAMPAIGN.targetKobo / CAMPAIGN.unitPriceKobo)} />
         <Kpi label="Average per Builder" value={t.builders ? naira(Number(t.raised_kobo) / t.builders) : '-'} sub={t.builders ? `${(Number(t.units) / t.builders).toFixed(1)} bricks` : undefined} />
@@ -66,7 +92,28 @@ export async function Overview() {
             <li><a href="/admin?view=contributions&status=success&receipt=unsent"><span>Receipts not emailed</span><b className={unsent ? 'is-warn' : ''}>{num(unsent)}</b></a></li>
             <li><a href="/admin?view=contributions&status=failed"><span>Failed payments</span><b>{num(failed)}</b></a></li>
             <li><a href="/admin?view=milestones"><span>Milestones verified</span><b>{done} / {ms.length}</b></a></li>
+            <li><a href="/admin?view=totals#automation"><span>Last automatic check</span><b className={runStale || (lastRun && !lastRun.ok) ? 'is-warn' : ''}>{lastRun ? when(lastRun.at) : 'Not run yet'}</b></a></li>
+            <li><a href="#alerts"><span>System alerts (7 days)</span><b className={alerts.length ? 'is-warn' : ''}>{num(alerts.length)}</b></a></li>
           </ul>
+        </Card>
+      </div>
+
+      <div id="alerts">
+        <Card title="System alerts" meta={<span>Problems the site ran into in the last 7 days</span>} flush>
+          {alerts.length ? (
+            <ul className="ad-alerts">
+              {alerts.map(a => (
+                <li key={a.id}>
+                  <Pill tone={a.source === 'payments' ? 'failed' : a.source === 'email' ? 'pending' : 'neutral'}>{ALERT_LABEL[a.source] || a.source}</Pill>
+                  <div>
+                    <p>{a.message}</p>
+                    {a.detail ? <code>{a.detail}</code> : null}
+                  </div>
+                  <time className="dim nowrap">{when(a.at)}</time>
+                </li>
+              ))}
+            </ul>
+          ) : <Empty title="All clear.">No problems in the last 7 days. If a payment, receipt email or the database has trouble, it will show here.</Empty>}
         </Card>
       </div>
 
@@ -284,11 +331,11 @@ export async function Budget() {
   return (
     <>
       <div className="ad-kpis ad-kpis--3">
-        <Kpi label="Budgeted" value={naira(set)} progress={pct(set, CAMPAIGN.targetKobo)} sub={`${pct(set, CAMPAIGN.targetKobo).toFixed(1)}% of the ₦300M target`} />
-        <Kpi label="Still to budget" value={naira(Math.max(0, CAMPAIGN.targetKobo - set))} sub={over ? 'Budget is above the target' : 'Lines left blank show "TBC"'} />
+        <Kpi label="Budgeted" value={naira(set)} progress={pct(set, CAMPAIGN.targetKobo)} sub={`${pct(set, CAMPAIGN.targetKobo).toFixed(1)}% of the ₦400M target`} />
+        <Kpi label="Still to budget" value={naira(Math.max(0, CAMPAIGN.targetKobo - set))} sub={over ? 'Budget is above the target' : 'Lines left blank are not yet budgeted'} />
         <Kpi label="Lines set" value={`${rows.filter(b => b.amount_kobo != null).length} / ${rows.length}`} />
       </div>
-      <Card title="What ₦300M builds" meta={<span>From Smartan's approved project budget</span>}>
+      <Card title="Budget allocation" meta={<span>Private, for the team only</span>}>
         <div className="ad-rows">
           {rows.map(b => (
             <form key={b.key} action={saveBudgetLine} className="ad-form ad-form--row ad-rows__row">
@@ -330,22 +377,69 @@ export async function Index() {
 
 /* ========================= ALLOCATED & SPENT ======================= */
 export async function Totals() {
-  const [t, settings] = await Promise.all([totals(), db().from('settings').select('*')]);
+  const [t, settings, lastRun, waiting] = await Promise.all([totals(), db().from('settings').select('*'), lastDailyRun(), unsentReceipts()]);
   const setting = (k: string) => (settings.data || []).find(s => s.key === k)?.value ?? null;
   const allocated = setting('allocated_kobo'), spent = setting('spent_kobo');
+  const opening = Number(setting('opening_kobo')) || 0;
+  const paid = Number(t.raised_kobo);
+  const shown = paid + opening;
   return (
     <>
       <div className="ad-kpis ad-kpis--3">
-        <Kpi label="Raised" value={naira(t.raised_kobo)} />
-        <Kpi label="Allocated" value={allocated == null ? 'Not published' : naira(Number(allocated))} sub={allocated == null ? undefined : `${pct(Number(allocated), Number(t.raised_kobo)).toFixed(1)}% of raised`} />
-        <Kpi label="Spent" value={spent == null ? 'Not published' : naira(Number(spent))} sub={spent == null ? undefined : `${pct(Number(spent), Number(t.raised_kobo)).toFixed(1)}% of raised`} />
+        <Kpi label="Shown as raised" value={naira(shown)} sub={`${pct(shown, CAMPAIGN.targetKobo).toFixed(2)}% of ${naira(CAMPAIGN.targetKobo)}`} progress={pct(shown, CAMPAIGN.targetKobo)} />
+        <Kpi label="Confirmed payments" value={naira(paid)} sub={`${num(t.builders)} ${t.builders === 1 ? 'Builder' : 'Builders'}`} />
+        <Kpi label="Starting amount" value={naira(opening)} sub={opening ? `${num(Math.floor(opening / CAMPAIGN.unitPriceKobo))} bricks` : 'Not set'} />
       </div>
-      <Card title="Update the published figures" meta={<span>Leave a field blank to show "Published once verified"</span>}>
-        <form action={saveTotals} className="ad-form ad-form--row">
-          <label><span>Allocated (₦)</span><input name="allocated" inputMode="numeric" defaultValue={koboToInput(allocated)} placeholder="Not published" /></label>
-          <label><span>Spent (₦)</span><input name="spent" inputMode="numeric" defaultValue={koboToInput(spent)} placeholder="Not published" /></label>
-          <button className="ad-btn ad-btn--primary" type="submit">Save figures</button>
-        </form>
+
+      <Card title="Campaign starting amount" meta={<span>Public: added to the raised total and bricks laid</span>}>
+        <p className="ad-help">Money already raised before the site went live (for example pledges, events or bank transfers). It is added to &ldquo;raised&rdquo; everywhere on the public page. It does not create Builders or appear on the Builder wall. Enter 0 to remove it.</p>
+        <ActionForm action={saveOpening} className="ad-form ad-form--row">
+          <label><span>Starting amount (₦)</span><input name="opening" inputMode="numeric" defaultValue={koboToInput(opening || null)} placeholder="0" /></label>
+          <SubmitButton>Save starting amount</SubmitButton>
+        </ActionForm>
+      </Card>
+
+      <div id="automation">
+        <Card title="Emails and the daily check" meta={<span>Runs automatically every day at about 7:00 WAT</span>}>
+          <div className="ad-kpis ad-kpis--inline">
+            <Kpi label="Receipts waiting" value={num(waiting)} sub={!hasEmail() ? 'Email is not set up yet' : waiting ? 'Sent by the next run, or with the button below' : 'Every receipt has been sent'} />
+            <Kpi label="Last automatic check" value={lastRun ? when(lastRun.at) : 'Not run yet'} sub={lastRun ? (lastRun.ok ? `OK${lastRun.trigger === 'admin' ? ', run from the admin' : ''}` : 'Found a problem: see System alerts') : 'Starts once the site is deployed on Vercel'} />
+          </div>
+          <p className="ad-help">Every day this check keeps the database active (so a free Supabase project never pauses), confirms the Brevo key still works (keys expire after 90 days unused), and sends any receipts held back by Brevo's daily limit of 300. Problems appear in System alerts on the Overview.</p>
+          <div className="ad-actions">
+            <ActionForm action={sendReceiptsNow} className="ad-form ad-form--row">
+              <SubmitButton pending="Sending…">Send waiting receipts now</SubmitButton>
+            </ActionForm>
+            <ActionForm action={runDailyNow} className="ad-form ad-form--row">
+              <SubmitButton pending="Checking…" className="ad-btn ad-btn--ghost">Run the daily check now</SubmitButton>
+            </ActionForm>
+          </div>
+        </Card>
+      </div>
+
+      <Card title="Allocated and spent" meta={<span>Private, for the team only</span>}>
+        <div className="ad-kpis ad-kpis--inline">
+          <Kpi label="Allocated" value={allocated == null ? 'Not set' : naira(Number(allocated))} sub={allocated == null ? undefined : `${pct(Number(allocated), shown).toFixed(1)}% of raised`} />
+          <Kpi label="Spent" value={spent == null ? 'Not set' : naira(Number(spent))} sub={spent == null ? undefined : `${pct(Number(spent), shown).toFixed(1)}% of raised`} />
+        </div>
+        <ActionForm action={saveTotals} className="ad-form ad-form--row">
+          <label><span>Allocated (₦)</span><input name="allocated" inputMode="numeric" defaultValue={koboToInput(allocated)} placeholder="Not set" /></label>
+          <label><span>Spent (₦)</span><input name="spent" inputMode="numeric" defaultValue={koboToInput(spent)} placeholder="Not set" /></label>
+          <SubmitButton>Save figures</SubmitButton>
+        </ActionForm>
+      </Card>
+
+      <Card title="Danger zone" meta={<span>Cannot be undone</span>}>
+        <div className="ad-danger">
+          <div>
+            <b>Clear all contributions and Builders</b>
+            <p className="ad-help">Deletes every payment record ({num(t.builders)} {t.builders === 1 ? 'Builder' : 'Builders'}, {naira(paid)}) and restarts Builder and receipt numbers at #000001 and SIX-2026-000001. Use it to remove test payments before launch. The ledger, updates, milestones, budget and starting amount are kept. Payments stay in your Paystack dashboard.</p>
+          </div>
+          <ActionForm action={clearAll} className="ad-form ad-form--row">
+            <label><span>Type {CLEAR_PHRASE} to confirm</span><input name="confirm" autoComplete="off" placeholder={CLEAR_PHRASE} required /></label>
+            <ConfirmButton className="ad-btn ad-btn--danger" pending="Clearing…" message={`Delete all ${num(t.builders)} Builders and every contribution? This cannot be undone.`}>Clear everything</ConfirmButton>
+          </ActionForm>
+        </div>
       </Card>
     </>
   );

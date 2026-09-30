@@ -9,7 +9,7 @@ export const VIEWS = [
   { key: 'milestones', label: 'Milestones', icon: 'M5 21V4M5 4h11l-2 4 2 4H5' },
   { key: 'budget', label: 'Budget', icon: 'M12 3v9l7.8 4.5A9 9 0 1112 3z' },
   { key: 'index', label: 'Impact Index', icon: 'M4 20V10M10 20V4M16 20v-7M22 20H2' },
-  { key: 'totals', label: 'Allocated & spent', icon: 'M3 7h18v12H3zM3 7l3-3h12l3 3M16 13h2' },
+  { key: 'totals', label: 'Settings', icon: 'M3 7h18v12H3zM3 7l3-3h12l3 3M16 13h2' },
 ] as const;
 export type View = (typeof VIEWS)[number]['key'];
 
@@ -18,7 +18,7 @@ export const Icon = ({ d }: { d: string }) => (
 );
 
 export function Shell({ view, title, sub, actions, saved, warn, children }: {
-  view: View; title: string; sub?: string; actions?: ReactNode; saved?: boolean; warn?: ReactNode; children: ReactNode;
+  view: View; title: string; sub?: string; actions?: ReactNode; saved?: string; warn?: ReactNode; children: ReactNode;
 }) {
   return (
     <div className="ad">
@@ -51,7 +51,7 @@ export function Shell({ view, title, sub, actions, saved, warn, children }: {
         {warn ? <div className="ad-banner">{warn}</div> : null}
         {children}
       </main>
-      {saved ? <div className="ad-toast" role="status">Saved. The public page updates within a few seconds.</div> : null}
+      {saved ? <div className="ad-toast" role="status">{saved === 'cleared' ? 'Cleared. All contributions and Builders were removed.' : 'Saved. The public page updates within a few seconds.'}</div> : null}
     </div>
   );
 }

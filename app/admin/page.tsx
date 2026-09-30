@@ -8,7 +8,7 @@ import { Budget, Contributions, Index, Ledger, Milestones, Overview, Totals, Upd
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Admin | Smartan Impact Exchange', robots: { index: false, follow: false } };
 
-type Search = Promise<{ view?: string; error?: string; saved?: string; status?: string; q?: string; page?: string; receipt?: string }>;
+type Search = Promise<{ view?: string; error?: string; saved?: string; clear?: string; status?: string; q?: string; page?: string; receipt?: string }>;
 
 const TITLES: Record<View, [string, string]> = {
   overview: ['Overview', 'The campaign at a glance.'],
@@ -16,9 +16,9 @@ const TITLES: Record<View, [string, string]> = {
   ledger: ['Transparency ledger', 'Verified allocations and spending, published in "Follow every naira".'],
   updates: ['Campaign updates', 'News for Builders, shown on the public page.'],
   milestones: ['Milestones', 'The physical build, step by step.'],
-  budget: ['Budget', 'How the ₦300M target is allocated.'],
+  budget: ['Budget', 'How the ₦400M target is allocated. Private: never shown on the public site.'],
   index: ['Impact Index', 'Verified project milestone progress.'],
-  totals: ['Allocated and spent', 'The headline transparency figures.'],
+  totals: ['Campaign settings', 'The starting amount, private figures, and clearing test data.'],
 };
 
 function Gate({ children }: { children: React.ReactNode }) {
@@ -69,7 +69,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
 
   return (
     <Shell
-      view={view} title={title} sub={sub} actions={actions} saved={Boolean(q.saved)}
+      view={view} title={title} sub={sub} actions={actions} saved={q.saved}
       warn={!hasPayments() ? <>Payments are off. Add <code>PAYSTACK_SECRET_KEY</code> to start accepting contributions.</> : null}
     >
       {view === 'overview' && <Overview />}

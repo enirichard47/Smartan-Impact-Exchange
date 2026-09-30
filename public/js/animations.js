@@ -331,7 +331,7 @@
 
   /* ---------- sound: synthesised with Web Audio, no files ---------- */
   // Browsers only allow sound after a click, so the intro starts with a
-  // "Begin with sound" gate; a replay click counts as that gesture too.
+  // tap on "Sound on" in the intro; a replay click counts as that gesture too.
   const sfx = (() => {
     let ac = null, master = null, enabled = false, drone = null, noiseBuf = null;
     const ensure = () => {
@@ -372,9 +372,9 @@
     };
     return {
       get on() { return enabled; },
-      enable(v) {
+      enable(v, remember = true) {
         enabled = v;
-        try { localStorage.setItem('six-sound', v ? '1' : '0'); } catch (e) { /* ignore */ }
+        if (remember) { try { localStorage.setItem('six-sound', v ? '1' : '0'); } catch (e) { /* ignore */ } }
         if (v) ensure(); else this.droneStop(true);
       },
       // counter tick: a short mechanical click, rising slightly as the count climbs
@@ -481,9 +481,11 @@
     const scenes = {};
     opening.querySelectorAll('[data-scene]').forEach(s => { scenes[s.dataset.scene] = s; });
     const soundBtn = document.getElementById('opSound');
+    // the button says what a tap does: "Sound on" while muted, "Sound off" while playing
     const syncSoundBtn = () => {
-      soundBtn.textContent = sfx.on ? 'Sound on' : 'Sound off';
+      soundBtn.innerHTML = sfx.on ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg><span>Sound off</span>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg><span>Sound on</span>';
       soundBtn.setAttribute('aria-pressed', String(sfx.on));
+      soundBtn.setAttribute('aria-label', sfx.on ? 'Turn sound off' : 'Turn sound on');
     };
 
     if (replay) {
@@ -558,7 +560,6 @@
 
     // the sequence itself
     const play = () => {
-      soundBtn.hidden = false;
       syncSoundBtn();
       sfx.droneStart();
       at(300, () => on('date'));
@@ -579,23 +580,12 @@
 
     let soundPref = null;
     try { soundPref = localStorage.getItem('six-sound'); } catch (e) { /* ignore */ }
-    if (replay) {
-      // the replay click already unlocked audio
-      sfx.enable(soundPref !== '0');
-      scenes.gate.classList.remove('is-on');
-      document.getElementById('opSkip').focus({ preventScroll: true });
-      play();
-    } else {
-      on('gate');
-      const begin = withSound => {
-        sfx.enable(withSound);
-        out('gate');
-        timers.push(setTimeout(play, 500));
-      };
-      document.getElementById('opSoundOn').onclick = () => begin(true);
-      document.getElementById('opSoundOff').onclick = () => begin(false);
-      document.getElementById(soundPref === '0' ? 'opSoundOff' : 'opSoundOn').focus({ preventScroll: true });
-    }
+    // No gate: the intro starts at once, silently. Browsers only allow sound after a
+    // tap, so the visitor turns it on with the Sound button. A replay click already
+    // counts as that tap, so a replay follows their last choice.
+    sfx.enable(replay && soundPref !== '0', false);
+    document.getElementById('opSkip').focus({ preventScroll: true });
+    play();
   };
 
   SIX.replayOpening = () => { if (opening && window.SIX_CONFIG) runOpening(true); };

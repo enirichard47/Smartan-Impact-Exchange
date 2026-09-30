@@ -50,3 +50,6 @@ export function parseNairaToKobo(v: FormDataEntryValue | null): number | null {
   if (!Number.isFinite(n) || n < 0) throw new Error(`Invalid amount: ${v}`);
   return Math.round(n * 100);
 }
+
+// Typed by an admin to confirm clearing every contribution and Builder.
+export const CLEAR_PHRASE = 'CLEAR ALL';

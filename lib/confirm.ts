@@ -1,8 +1,9 @@
 import { db } from './db';
-import { sendReceipt } from './email';
+import { sendReceiptNow } from './receipts';
 import type { PaystackTransaction } from './paystack';
 import { invalidateBuilder } from './builders';
 import { invalidateCampaign } from './campaign';
+import { report } from './report';
 
 export type Confirmed = {
   builderNumber: number;
@@ -13,6 +14,8 @@ export type Confirmed = {
   email: string;
   totalUnits: number;
   newlyConfirmed: boolean;
+  // what happened to the receipt email: sent now, waiting for the daily run, or email is off
+  receiptMail?: 'sent' | 'quota' | 'error' | 'off';
 };
 
 // Records a successful Paystack transaction. Safe to call more than once for
@@ -54,7 +57,7 @@ export async function confirmTransaction(tx: PaystackTransaction): Promise<Confi
     invalidateCampaign();
     invalidateBuilder(result.builderNumber);
     try {
-      const sent = await sendReceipt({
+      result.receiptMail = await sendReceiptNow({
         builderNumber: result.builderNumber,
         receiptNumber: result.receiptNumber,
         units: result.units,
@@ -65,9 +68,10 @@ export async function confirmTransaction(tx: PaystackTransaction): Promise<Confi
         reference: tx.reference,
         paidAt: tx.paid_at || new Date().toISOString(),
       });
-      if (sent) await db().from('contributions').update({ receipt_sent_at: new Date().toISOString() }).eq('reference', tx.reference);
     } catch (e) {
-      console.error('receipt email failed', e); // never fail a confirmed payment over email
+      // never fail a confirmed payment over email; the daily run retries it
+      result.receiptMail = 'error';
+      await report('email', `The receipt email for Builder #${String(result.builderNumber).padStart(6, '0')} could not be sent. It will be retried automatically by the next daily run.`, e);
     }
   }
   return result;

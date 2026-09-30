@@ -3,9 +3,9 @@
 
 export const CAMPAIGN = {
   id: 'SH-2026-001',
-  targetKobo: 300_000_000 * 100, // ₦300,000,000
+  targetKobo: 400_000_000 * 100, // ₦400,000,000
   unitPriceKobo: 10_000 * 100, // ₦10,000 = 1 Impact Unit = 1 brick (also the minimum)
-  maxUnits: 30_000, // the whole target in one go
+  maxUnits: 40_000, // the whole target in one go
   receiptPrefix: 'SIX-2026', // receipt numbers read SIX-2026-000123
 };
 
@@ -20,11 +20,16 @@ export const env = {
   supabaseUrl: process.env.SUPABASE_URL || '',
   supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   paystackSecret: process.env.PAYSTACK_SECRET_KEY || '',
-  resendKey: process.env.RESEND_API_KEY || '',
-  receiptFrom: process.env.RECEIPT_FROM || '',
+  // receipt emails go through Brevo (transactional email)
+  brevoKey: process.env.BREVO_API_KEY || '',
+  receiptFrom: process.env.RECEIPT_FROM || '',   // 'Smartan House <builders@smartanhouse.org>', a sender verified in Brevo
+  replyTo: process.env.RECEIPT_REPLY_TO || '',   // optional: where donors' replies go, e.g. an inbox someone reads
+  // Vercel sends this with its scheduled (cron) calls; nobody else can run the daily job
+  cronSecret: process.env.CRON_SECRET || '',
   adminPassword: process.env.ADMIN_PASSWORD || '',
   adminSecret: process.env.ADMIN_SESSION_SECRET || '',
 };
 
 export const hasDatabase = () => Boolean(env.supabaseUrl && env.supabaseServiceKey);
 export const hasPayments = () => Boolean(env.paystackSecret) && hasDatabase();
+export const hasEmail = () => Boolean(env.brevoKey && env.receiptFrom);

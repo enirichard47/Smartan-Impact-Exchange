@@ -62,8 +62,9 @@ const sections: Section[] = [
       <>
         <p>Contributions are used to build, equip and open the new Smartan House facility and the Acorn Incubator Hub, as described on this site.</p>
         <ul>
-          <li>Budget figures shown on the site are our plan. Individual amounts may move between budget lines as the build progresses.</li>
-          <li>Allocations and spending are published in the Transparency ledger once they are verified, together with their reference and, where available, the source document.</li>
+          <li>The detailed project budget is managed internally by Smartan House, and amounts may move between parts of the project as the build progresses.</li>
+          <li>Verified spending is published in the Transparency ledger, together with its reference and, where available, the source document.</li>
+          <li>Contributions stay open after the target is reached. Anything raised above the target is used to equip and run the facility and the Acorn Incubator Hub, and for Smartan House programmes.</li>
           <li>If the target is not reached, or the plan has to change, contributions will be applied to the parts of the facility, or the Smartan House programmes, closest to the purpose you gave for. Contributions are not returned because the target is not met.</li>
         </ul>
       </>

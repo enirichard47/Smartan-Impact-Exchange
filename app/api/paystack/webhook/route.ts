@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { confirmTransaction } from '@/lib/confirm';
 import { isValidSignature, type PaystackTransaction } from '@/lib/paystack';
+import { report } from '@/lib/report';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
       await confirmTransaction(event.data);
     } catch (e) {
       // Log and return 500 so Paystack retries (e.g. a brief database outage).
-      console.error('webhook confirm failed', e);
+      await report('payments', `Paystack's notice for payment ${event.data.reference} could not be recorded. Paystack will retry automatically.`, e);
       return NextResponse.json({ error: 'retry' }, { status: 500 });
     }
   }

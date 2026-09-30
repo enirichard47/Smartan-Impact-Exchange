@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Smartan Impact Exchange — Build the new Smartan House facility</title>
-  <meta name="description" content="Smartan House is raising ₦300,000,000 to build a new facility and the Acorn Incubator Hub. Become a Builder — no account needed.">
+  <meta name="description" content="Smartan House is raising ₦400,000,000 to build a new facility and the Acorn Incubator Hub. Become a Builder — no account needed.">
   <meta name="theme-color" content="#07090D">
   <meta name="color-scheme" content="dark light">
   <meta property="og:title" content="Smartan Impact Exchange (SIX)">
-  <meta property="og:description" content="Help build the new Smartan House facility, brick by brick. ₦300M target. Become a Builder.">
+  <meta property="og:description" content="Help build the new Smartan House facility, brick by brick. ₦400M target. Become a Builder.">
   <link rel="icon" href="assets/logo-mark.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,15 +43,6 @@
   <!-- ============ OPENING DAY SEQUENCE ============ -->
   <div class="opening" id="opening" role="dialog" aria-modal="true" aria-label="Smartan Impact Exchange opening sequence">
     <div class="op__stage">
-      <div class="op__scene op__scene--gate" data-scene="gate">
-        <span class="logo-mark op__mark"><img src="assets/logo-icon.png" alt=""></span>
-        <span class="op__label mono">OPENING DAY</span>
-        <span class="op__gate-title">Smartan Impact Exchange</span>
-        <div class="op__gate-ctas">
-          <button class="btn btn--primary btn--lg" id="opSoundOn" type="button">Begin with sound</button>
-          <button class="btn btn--ghost btn--lg" id="opSoundOff" type="button">Begin without sound</button>
-        </div>
-      </div>
       <div class="op__scene" data-scene="date">
         <span class="op__date mono" id="opDate">23 SEPTEMBER 2026</span>
         <span class="op__city mono" id="opCity">LAGOS, NIGERIA</span>
@@ -76,7 +67,7 @@
     </div>
     <div class="op__meta mono"><span>OPENING DAY</span><span><span id="opClock">--:--:--</span> WAT</span></div>
     <div class="op__controls">
-      <button class="op__skip mono" id="opSound" type="button" aria-pressed="false" hidden>Sound off</button>
+      <button class="op__skip op__sound mono" id="opSound" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg><span>Sound on</span></button>
       <button class="op__skip mono" id="opSkip" type="button">Skip intro <span aria-hidden="true">→</span></button>
     </div>
   </div>
@@ -97,12 +88,15 @@
       </nav>
       <div class="nav__right">
         <span class="nav__status mono"><i class="live-dot"></i><span data-market-status>CAMPAIGN LIVE</span></span>
-        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light mode" title="Switch to light mode"><svg class="ti ti--sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg><svg class="ti ti--moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to light mode" title="Switch to light mode"><svg class="ti ti--moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg><svg class="ti ti--sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg></button>
         <button class="btn btn--primary btn--sm nav__cta" data-acquire>Become a Builder</button>
         <button class="nav__burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu"><span></span><span></span></button>
       </div>
     </div>
   </header>
+
+  <!-- shown only when live figures cannot be loaded; hides itself on recovery -->
+  <div class="livebar" id="liveBar" role="status" aria-live="polite" hidden><i class="livebar__dot" aria-hidden="true"></i><span id="liveBarText"></span></div>
 
   <div class="mmenu" id="mobileMenu" aria-hidden="true">
     <nav class="mmenu__links" aria-label="Mobile">
@@ -126,7 +120,6 @@
 
     <!-- ============ 01 THE CALL ============ -->
     <section class="hero">
-      <div class="hero__grid" aria-hidden="true"></div>
       <div class="container hero__inner">
         <div class="hero__copy">
           <div class="eyebrow mono hero__eyebrow">
@@ -141,12 +134,13 @@
           </h1>
 
           <div class="hq" aria-label="Campaign progress">
-            <p class="hq__line"><b class="hq__raised mono" data-bind="raisedM">₦0.00M</b> <span class="hq__of">raised of ₦300M</span></p>
-            <div class="hq__bar" role="progressbar" aria-label="Share of the ₦300M target raised" aria-valuemin="0" aria-valuemax="100"><i class="hq__fill" data-bind-width></i></div>
+            <p class="hq__line"><b class="hq__raised mono" data-bind="raisedM">₦0.00M</b> <span class="hq__of" data-funded="raised. The ₦400M target is reached.">raised of ₦400M</span></p>
+            <div class="hq__bar" role="progressbar" aria-label="Share of the ₦400M target raised" aria-valuemin="0" aria-valuemax="100"><i class="hq__fill" data-bind-width></i></div>
             <p class="hq__meta"><span data-bind="progress">0.00%</span> funded by <span data-bind="builders">0</span> Builders</p>
+            <p class="funded-note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span><b>Target reached. Thank you, Builders.</b> Every brick laid now goes further.</span></p>
           </div>
 
-          <p class="lede hero__lede">Smartan House is raising ₦300,000,000 to build a new home for exceptional young people from underserved communities — with residential space, the Acorn Incubator Hub, and places to learn and build together. <span class="hero__brick">Every Builder lays a brick. Together, we build it brick by brick.</span></p>
+          <p class="lede hero__lede">Smartan House is raising ₦400,000,000 to build a new home for exceptional young people from underserved communities — with residential space, the Acorn Incubator Hub, and places to learn and build together. <span class="hero__brick">Every Builder lays a brick. Together, we build it brick by brick.</span></p>
           <div class="hero__ctas">
             <button class="btn btn--primary btn--lg" data-acquire>Become a Builder <span class="arr">→</span></button>
             <a class="btn btn--ghost btn--lg" href="#facility">See the facility</a>
@@ -173,7 +167,7 @@
           <span class="live"><i class="live-dot"></i>LIVE</span>
         </div>
         <dl class="market__cells">
-          <div class="mcell"><dt class="mono">TARGET</dt><dd class="mono">₦300,000,000</dd><span class="mono mcell__sub">FACILITY CAMPAIGN</span></div>
+          <div class="mcell"><dt class="mono">TARGET</dt><dd class="mono">₦400,000,000</dd><span class="mono mcell__sub">FACILITY CAMPAIGN</span></div>
           <div class="mcell"><dt class="mono">RAISED</dt><dd class="mono up" data-bind="raised">₦0</dd><span class="mono mcell__sub">VERIFIED</span></div>
           <div class="mcell"><dt class="mono">PROGRESS</dt><dd class="mono" data-bind="progress">0.00%</dd><span class="mcell__bar"><i data-bind-width></i></span></div>
           <div class="mcell"><dt class="mono">BUILDERS</dt><dd class="mono" data-bind="builders">0</dd><span class="mono mcell__sub">PEOPLE</span></div>
@@ -186,7 +180,7 @@
           <span class="tk">PROGRESS <em data-bind="progress">0.00%</em></span>
           <span class="tk">BUILDERS <em data-bind="builders">0</em></span>
           <span class="tk">BRICKS LAID <em data-bind="units">0</em></span>
-          <span class="tk">REMAINING <em data-bind="remaining">₦300,000,000</em></span>
+          <span class="tk"><span data-funded="ABOVE TARGET">REMAINING</span> <em data-bind="remaining">₦400,000,000</em></span>
           <span class="tk">LATEST <em data-bind-text="latest">—</em></span>
           <span class="tk tk--note">IMPACT UNITS ARE CAMPAIGN CONTRIBUTIONS — NOT SECURITIES</span>
         </div>
@@ -459,42 +453,26 @@
         <div class="shead" data-reveal><span class="mono">SIX / BRICKS</span><i></i><span class="mono">BRICK BY BRICK</span></div>
         <div class="sec__intro">
           <h2 class="h2" id="bricksTitle" data-reveal>Brick<br>by brick.</h2>
-          <p class="lede" data-reveal>Every ₦10,000 lays one brick. As Builders contribute, the wall rises — <span data-total-bricks>30,000</span> bricks to build the new Smartan House facility.</p>
+          <p class="lede" data-reveal>Every ₦10,000 lays one brick. As Builders contribute, the wall rises — <span data-total-bricks>40,000</span> bricks to build the new Smartan House facility.</p>
         </div>
         <div class="bwall" data-reveal>
           <div class="bwall__head mono">
-            <span><b data-bind="units">0</b> OF <b data-total-bricks>30,000</b> BRICKS LAID</span>
+            <span><b data-bind="units">0</b> OF <b data-total-bricks>40,000</b> BRICKS LAID</span>
             <span id="brickScale">EACH BRICK SHOWN = 10 BRICKS</span>
           </div>
           <div class="bwall__stage"><canvas id="brickCanvas" role="img" aria-label="Wall of bricks showing how many have been laid"></canvas></div>
           <div class="bwall__foot mono">
-            <span><b data-bind="bricksLeft">30,000</b> BRICKS TO GO</span>
+            <span><b data-bind="bricksLeft">40,000</b> <span data-funded="BRICKS BEYOND THE TARGET">BRICKS TO GO</span></span>
             <button class="btn btn--primary btn--sm" data-acquire data-units="1">Lay a brick <span class="arr">→</span></button>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ============ 05 WHAT ₦300M BUILDS ============ -->
-    <section class="sec budget" id="budget">
-      <div class="container">
-        <div class="shead" data-reveal><span class="mono">SIX / 005</span><i></i><span class="mono">WHAT ₦300M BUILDS</span></div>
-        <div class="sec__intro">
-          <h2 class="h2" data-reveal>What ₦300M<br>builds.</h2>
-          <p class="lede" data-reveal>Every naira is assigned to a part of the facility. The allocation follows Smartan's approved project budget.</p>
-        </div>
-        <div class="alloc" data-reveal>
-          <div class="alloc__bar" id="allocBar"></div>
-          <ol class="alloc__rows" id="allocRows"></ol>
-          <p class="alloc__note mono" id="allocNote"></p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ 06 LIVE CAMPAIGN PROGRESS ============ -->
+    <!-- ============ 05 LIVE CAMPAIGN PROGRESS ============ -->
     <section class="sec xch" id="progress">
       <div class="container">
-        <div class="shead" data-reveal><span class="mono">SIX / 006</span><i></i><span class="mono">LIVE CAMPAIGN PROGRESS</span></div>
+        <div class="shead" data-reveal><span class="mono">SIX / 005</span><i></i><span class="mono">LIVE CAMPAIGN PROGRESS</span></div>
         <div class="sec__intro">
           <h2 class="h2" data-reveal>Live campaign<br>progress.</h2>
           <p class="lede" data-reveal>Where the campaign stands, as it happens — every Builder, every unit, every naira.</p>
@@ -516,7 +494,7 @@
             <div class="tp tp--overview">
               <div class="tp__head mono"><span>CAMPAIGN OVERVIEW</span><span class="dim">SH-2026-001</span></div>
               <div class="ov">
-                <div class="ov__cell"><span class="label mono">TARGET</span><b class="mono">₦300M</b></div>
+                <div class="ov__cell"><span class="label mono">TARGET</span><b class="mono">₦400M</b></div>
                 <div class="ov__cell"><span class="label mono">RAISED</span><b class="mono up" data-bind="raisedM">₦0.00M</b></div>
                 <div class="ov__cell"><span class="label mono">BUILDERS</span><b class="mono" data-bind="builders">0</b></div>
                 <div class="ov__cell"><span class="label mono">BRICKS LAID</span><b class="mono" data-bind="units">0</b></div>
@@ -528,8 +506,8 @@
               <dl class="ov__stats mono">
                 <div><dt>AVG BRICKS / BUILDER</dt><dd data-bind="avg">0.0</dd></div>
                 <div><dt>NEXT FUNDING LEVEL</dt><dd data-bind-text="nextLevel">₦75M (25%)</dd></div>
-                <div><dt>TO NEXT LEVEL</dt><dd data-bind="toNext">₦75,000,000</dd></div>
-                <div><dt>REMAINING TO TARGET</dt><dd data-bind="remaining">₦300,000,000</dd></div>
+                <div><dt data-funded="LEVELS">TO NEXT LEVEL</dt><dd data-bind="toNext">₦75,000,000</dd></div>
+                <div><dt data-funded="ABOVE TARGET">REMAINING TO TARGET</dt><dd data-bind="remaining">₦400,000,000</dd></div>
               </dl>
             </div>
             <div class="tp tp--activity">
@@ -567,16 +545,27 @@
     <!-- ============ 08 THE BUILDERS ============ -->
     <section class="sec builders" id="builders">
       <div class="container">
-        <div class="shead" data-reveal><span class="mono">SIX / 007</span><i></i><span class="mono">THE BUILDERS</span></div>
+        <div class="shead" data-reveal><span class="mono">SIX / 006</span><i></i><span class="mono">THE BUILDERS</span></div>
         <div class="sec__intro">
           <h2 class="h2" data-reveal>The Builders.<br><span class="muted">Thousands of people. One facility.</span></h2>
           <div class="builders__count" data-reveal>
             <span class="builders__n mono" data-bind="builders">0</span>
-            <span class="label mono">BUILDERS SO FAR. EACH LIT DOT IS A PERSON.</span>
+            <span class="label mono" id="dotsLabel">BUILDERS SO FAR. EACH LIT DOT IS A PERSON.</span>
           </div>
         </div>
         <div class="dots" data-reveal><canvas id="dotsCanvas" aria-hidden="true"></canvas></div>
-        <div class="wall" id="wall"></div>
+        <div class="bdir">
+          <div class="bdir__bar" data-reveal>
+            <label class="bdir__search">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+              <input type="search" id="bdirQ" placeholder="Search by first name or Builder number" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" maxlength="40" aria-label="Search Builders by first name or Builder number" aria-controls="wall">
+              <button type="button" class="bdir__clear" id="bdirClear" aria-label="Clear search" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button>
+            </label>
+            <span class="bdir__meta mono" id="bdirMeta" aria-live="polite"></span>
+          </div>
+          <div class="wall" id="wall"></div>
+          <div class="bdir__foot"><button type="button" class="btn btn--ghost btn--lg" id="bdirMore" hidden>Show more Builders</button></div>
+        </div>
         <p class="wall__foot mono" data-reveal>Some Builders choose to be seen. Some choose to stay anonymous. Every one of them counts.</p>
       </div>
     </section>
@@ -584,19 +573,17 @@
     <!-- ============ 09 TRANSPARENCY ============ -->
     <section class="sec ledger" id="transparency">
       <div class="container">
-        <div class="shead" data-reveal><span class="mono">SIX / 008</span><i></i><span class="mono">TRANSPARENCY</span></div>
+        <div class="shead" data-reveal><span class="mono">SIX / 007</span><i></i><span class="mono">TRANSPARENCY</span></div>
         <div class="sec__intro">
           <h2 class="h2" data-reveal>Follow<br>every naira.</h2>
-          <p class="lede" data-reveal>See what happens to the campaign funds. Every allocation is recorded and verified, then published here for anyone to inspect.</p>
+          <p class="lede" data-reveal>See what happens to the campaign funds. Verified spending is recorded, then published here for anyone to inspect.</p>
         </div>
 
         <div class="lg-grid">
           <aside class="lsum" data-reveal>
-            <div class="lsum__row"><span class="label mono">TARGET</span><b class="mono">₦300,000,000</b></div>
+            <div class="lsum__row"><span class="label mono">TARGET</span><b class="mono">₦400,000,000</b></div>
             <div class="lsum__row"><span class="label mono">RAISED</span><b class="mono up" data-bind="raised">₦0</b></div>
-            <div class="lsum__row"><span class="label mono">ALLOCATED</span><b class="mono" id="lsAllocated">—</b><small class="mono" id="lsAllocatedNote"></small></div>
-            <div class="lsum__row"><span class="label mono">SPENT</span><b class="mono" id="lsSpent">—</b><small class="mono" id="lsSpentNote"></small></div>
-            <div class="lsum__row"><span class="label mono">REMAINING TO TARGET</span><b class="mono" data-bind="remaining">₦300,000,000</b></div>
+            <div class="lsum__row"><span class="label mono" data-funded="ABOVE TARGET">REMAINING TO TARGET</span><b class="mono" data-bind="remaining">₦400,000,000</b></div>
           </aside>
 
           <div class="ltable" data-reveal>
@@ -621,7 +608,7 @@
     <section class="sec units" id="participate">
       <div class="container units__grid">
         <div class="units__left">
-          <div class="shead" data-reveal><span class="mono">SIX / 009</span><i></i><span class="mono">BECOME A BUILDER</span></div>
+          <div class="shead" data-reveal><span class="mono">SIX / 008</span><i></i><span class="mono">BECOME A BUILDER</span></div>
           <h2 class="h2" data-reveal>Every brick<br>tells a story.</h2>
           <p class="lede" data-reveal>Every ₦10,000 is one Impact Unit — one brick in the new Smartan House facility. The more you give, the more of the building you lay.</p>
 
@@ -666,15 +653,16 @@
     <section class="sec faq" id="faq">
       <div class="container faq__grid">
         <div>
-          <div class="shead" data-reveal><span class="mono">SIX / 010</span><i></i><span class="mono">QUESTIONS</span></div>
+          <div class="shead" data-reveal><span class="mono">SIX / 009</span><i></i><span class="mono">QUESTIONS</span></div>
           <h2 class="h2" data-reveal>Straight<br>answers.</h2>
         </div>
         <div class="faq__list" data-reveal>
           <details open><summary>What are you raising money for?</summary><p>The new Smartan House facility and the Acorn Incubator Hub. Nothing else — this campaign funds one facility.</p></details>
-          <details><summary>How much?</summary><p>₦300,000,000 — 30,000 bricks of ₦10,000 each.</p></details>
+          <details><summary>How much?</summary><p>₦400,000,000 — 40,000 bricks of ₦10,000 each.</p></details>
           <details><summary>Why?</summary><p>To expand Smartan's ability to support exceptional young people, particularly those from underserved communities, with a permanent home to live, learn and launch.</p></details>
-          <details><summary>Where does the money go?</summary><p>Into the facility, following Smartan's approved project budget. You can see the <a href="#budget">allocation</a> and every verified entry in the <a href="#transparency">transparency ledger</a>.</p></details>
-          <details><summary>How much has been raised?</summary><p>The live, verified figure is at the top of this page: <b data-bind="raised">₦0</b> of ₦300,000,000.</p></details>
+          <details><summary>Where does the money go?</summary><p>Into building, equipping and opening the new Smartan House facility and the Acorn Incubator Hub. Verified spending is published in the <a href="#transparency">transparency ledger</a>.</p></details>
+          <details><summary>What happens if you raise more than ₦400M?</summary><p>Contributions stay open. Anything above the target goes towards equipping and running the facility and the Acorn Incubator Hub, and into Smartan House programmes. Verified spending is published in the transparency ledger.</p></details>
+          <details><summary>How much has been raised?</summary><p>The live, verified figure is at the top of this page: <b data-bind="raised">₦0</b> of ₦400,000,000.</p></details>
           <details><summary>What happens after I contribute?</summary><p>You become a Builder and your bricks are laid on the wall. You receive a Builder ID, your Impact Units and a digital receipt — plus a Builder card you can share.</p></details>
           <details><summary>What is the minimum?</summary><p>₦10,000 — one brick. There is no maximum.</p></details>
           <details><summary>Do I need an account?</summary><p>No. Choose an amount, add your name and email, and pay. That's it.</p></details>
@@ -693,7 +681,7 @@
           <span class="cw">A future.</span>
           <span class="cw cw--final">Built together.</span>
         </div>
-        <div class="cinema__meta mono"><span>SIX / 011</span><i id="cinemaBar"></i></div>
+        <div class="cinema__meta mono"><span>SIX / 010</span><i id="cinemaBar"></i></div>
       </div>
     </section>
 
@@ -710,7 +698,7 @@
 
         <div class="goal" data-reveal>
           <div class="goal__top mono">
-            <span><b>₦300,000,000</b> TARGET</span>
+            <span><b>₦400,000,000</b> TARGET</span>
             <span><b data-bind="raisedM">₦0.00M</b> RAISED · <b data-bind="progress">0.00%</b></span>
           </div>
           <div class="goal__bar"><i data-bind-width></i></div>
@@ -752,7 +740,7 @@
       <div class="foot__bottom mono">
         <span>© 2026 Smartan House. All rights reserved.</span>
         <nav class="foot__legal" aria-label="Legal"><a href="/terms">Terms of Contribution</a><a href="/privacy">Privacy Policy</a></nav>
-        <span>SIX / 012 — END OF FEED</span>
+        <span>SIX / 011 — END OF FEED</span>
       </div>
     </div>
     <div class="foot__mark" aria-hidden="true">SMARTAN</div>
@@ -760,7 +748,7 @@
 
   <!-- mobile: the CTA stays within reach -->
   <div class="mbar" id="mbar" aria-hidden="true">
-    <div class="mbar__info mono"><b data-bind="raisedM">₦0.00M</b><span>OF ₦300M</span><i class="mbar__bar"><i data-bind-width></i></i></div>
+    <div class="mbar__info mono"><b data-bind="raisedM">₦0.00M</b><span>OF ₦400M</span><i class="mbar__bar"><i data-bind-width></i></i></div>
     <button class="btn btn--primary" data-acquire tabindex="-1">Become a Builder</button>
   </div>
 
@@ -787,8 +775,9 @@
         </div>
         <label class="field">
           <span class="mono">BRICKS <em>(₦10,000 EACH)</em></span>
-          <input type="number" id="acqUnits" min="1" max="30000" step="1" value="10" inputmode="numeric" required>
+          <input type="number" id="acqUnits" min="1" max="40000" step="1" value="10" inputmode="numeric" required>
         </label>
+        <p class="funded-note funded-note--form"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span><b>The ₦400M target is reached.</b> New bricks go towards equipping and running the facility.</span></p>
         <div class="acq__bricks" id="acqBricks" aria-hidden="true"></div>
         <dl class="acq__sum mono">
           <div><dt>BRICKS</dt><dd id="acqUnitsOut">10</dd></div>
@@ -874,6 +863,17 @@
   </dialog>
 
   <div class="toast mono" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- photo viewer: opens when a photo is clicked (see "PHOTO VIEWER" in main.js) -->
+  <dialog class="lbx" id="lightbox" aria-label="Photo viewer">
+    <figure class="lbx__fig">
+      <img class="lbx__img" id="lbxImg" alt="">
+      <figcaption class="lbx__cap"><span class="mono" id="lbxN"></span><span id="lbxCap"></span></figcaption>
+    </figure>
+    <button class="lbx__btn lbx__close" id="lbxClose" type="button" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <button class="lbx__btn lbx__nav lbx__prev" id="lbxPrev" type="button" aria-label="Previous photo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button class="lbx__btn lbx__nav lbx__next" id="lbxNext" type="button" aria-label="Next photo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+  </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>
   <script src="js/animations.js" defer></script>

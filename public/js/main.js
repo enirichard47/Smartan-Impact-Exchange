@@ -69,11 +69,21 @@
      DATA
      ====================================================================== */
   const D = CFG.campaign;
-  const labelFor = key => (D.allocation.find(a => a.key === key) || {}).label || key;
+  const labelFor = key => ((D.categories || []).find(a => a.key === key) || {}).label || key;
 
   /* ---------- campaign state + bindings ---------- */
   const S = { raised: D.raised || 0, builders: D.builders || 0, updated: D.updatedAt ? new Date(D.updatedAt) : null };
   const recent = [...(D.recentBuilders || [])];
+  // the target is reached: contributions stay open, and the page celebrates going beyond it
+  const funded = () => S.raised >= CFG.target;
+  const applyFunded = () => {
+    const f = funded();
+    document.documentElement.classList.toggle('is-funded', f);
+    $$('[data-funded]').forEach(el => {
+      if (el.dataset.base == null) el.dataset.base = el.textContent;
+      el.textContent = f ? el.dataset.funded : el.dataset.base;
+    });
+  };
   const vals = () => {
     const units = S.raised / CFG.unitPrice;
     const progress = (S.raised / CFG.target) * 100;
@@ -82,9 +92,10 @@
       raised: S.raised, raisedM: S.raised, units, builders: S.builders, progress,
       avg: S.builders ? units / S.builders : 0,
       toNext: Math.max(0, nextLevel - S.raised),
-      remaining: Math.max(0, CFG.target - S.raised),
-      remainingM: Math.max(0, CFG.target - S.raised),
-      bricksLeft: Math.max(0, Math.round((CFG.target - S.raised) / CFG.unitPrice)),
+      // once the target is passed, these show how far beyond it the campaign has gone
+      remaining: Math.abs(CFG.target - S.raised),
+      remainingM: Math.abs(CFG.target - S.raised),
+      bricksLeft: Math.round(Math.abs(CFG.target - S.raised) / CFG.unitPrice),
       nextLevel,
     };
   };
@@ -95,9 +106,9 @@
     builders: v => nf.format(Math.round(v)),
     progress: v => `${v.toFixed(2)}%`,
     avg: v => v.toFixed(1),
-    toNext: naira,
-    remaining: naira,
-    remainingM: v => `₦${(v / 1e6).toFixed(2)}M`,
+    toNext: v => (funded() ? 'ALL REACHED' : naira(v)),
+    remaining: v => (funded() ? '+' : '') + naira(v),
+    remainingM: v => `${funded() ? '+' : ''}₦${(v / 1e6).toFixed(2)}M`,
     bricksLeft: v => nf.format(Math.round(v)),
   };
 
@@ -140,6 +151,7 @@
     widths.forEach(el => SIX.once(el, () => { el._seen = true; setWidth(el); }, { threshold: 0 }));
   });
   setTexts();
+  applyFunded();
 
   const nextId = () => S.builders + 1;
   function refresh() {
@@ -151,6 +163,7 @@
     });
     widths.forEach(el => el._seen && setWidth(el));
     setTexts();
+    applyFunded();
     if (heroReady) heroB.setProgress(v.progress / 100);
     seqNow.style.left = `${Math.min(100, v.progress)}%`;
     $('#calcId').textContent = bid(nextId());
@@ -514,6 +527,63 @@
     $$('[data-photo-group]').forEach(g => {
       if ($$('[data-photo]', g).every(f => f.hidden)) g.hidden = true;
     });
+
+    /* ---------- PHOTO VIEWER: click any photo to see it full size ---------- */
+    const lbx = $('#lightbox');
+    const shots = $$('.ph.has-img').filter(f => !f.hidden);
+    if (!lbx || !shots.length) return;
+    const img = $('#lbxImg'), cap = $('#lbxCap'), num = $('#lbxN');
+    let at = 0, opener = null;
+    const show = i => {
+      at = (i + shots.length) % shots.length;
+      const f = shots[at], src = $('.ph__frame img', f);
+      img.classList.remove('is-in');
+      img.onload = () => img.classList.add('is-in');
+      img.src = src.currentSrc || src.src;
+      img.alt = src.alt;
+      if (img.complete) img.classList.add('is-in');
+      cap.textContent = ($('[data-cap]', f) || {}).textContent || src.alt;
+      num.textContent = `${String(at + 1).padStart(2, '0')} / ${String(shots.length).padStart(2, '0')}`;
+    };
+    const open = i => {
+      opener = document.activeElement;
+      show(i);
+      lbx.classList.toggle('is-single', shots.length < 2);
+      lbx.showModal();
+      if (SIX.lenis) SIX.lenis.stop();
+    };
+    const close = () => lbx.close();
+    lbx.addEventListener('close', () => {
+      if (SIX.lenis) SIX.lenis.start();
+      if (opener && opener.focus) opener.focus({ preventScroll: true });
+    });
+    shots.forEach((f, i) => {
+      const frame = $('.ph__frame', f);
+      const label = ($('[data-cap]', f) || {}).textContent || $('img', frame).alt || 'photo';
+      frame.setAttribute('role', 'button');
+      frame.setAttribute('tabindex', '0');
+      frame.setAttribute('aria-label', `View larger: ${label}`);
+      frame.addEventListener('click', () => open(i));
+      frame.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(i); } });
+    });
+    $('#lbxClose').addEventListener('click', close);
+    $('#lbxPrev').addEventListener('click', () => show(at - 1));
+    $('#lbxNext').addEventListener('click', () => show(at + 1));
+    lbx.addEventListener('click', e => { if (e.target === lbx || e.target.classList.contains('lbx__fig')) close(); });
+    lbx.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); show(at - 1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); show(at + 1); }
+    });
+    // swipe left / right on phones
+    let x0 = null;
+    lbx.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+    lbx.addEventListener('touchend', e => {
+      if (x0 == null) return;
+      const dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 50) show(at + (dx < 0 ? 1 : -1));
+      x0 = null;
+    });
   })();
 
   /* ---------- verified milestones ---------- */
@@ -534,31 +604,6 @@
     $('#mtrackNote').textContent = `${String(done).padStart(2, '0')} OF ${String(ms.length).padStart(2, '0')} MILESTONES VERIFIED`;
     const active = ms.some(m => m.status !== 'upcoming');
     if ($('#heroMilestone')) $('#heroMilestone').textContent = active && cur >= 0 ? `MILESTONE ${String(cur + 1).padStart(2, '0')} / ${String(ms.length).padStart(2, '0')}` : 'ILLUSTRATIVE MODEL';
-  })();
-
-  /* ---------- what ₦200M builds ---------- */
-  (() => {
-    const alloc = D.allocation || [];
-    const known = alloc.filter(a => a.amount != null);
-    const shades = ['var(--accent)', 'rgba(var(--accent-rgb),.72)', 'rgba(var(--accent-rgb),.5)', 'rgba(var(--accent-rgb),.32)', 'rgba(var(--fg-rgb),.45)', 'rgba(var(--fg-rgb),.22)'];
-    const bar = $('#allocBar');
-    if (known.length) {
-      bar.innerHTML = alloc.map((a, i) => (a.amount ? `<i style="flex:${a.amount};background:${shades[i % shades.length]};--d:${i * 110}ms" title="${esc(a.label)}: ${pct(a.amount, CFG.target)}"></i>` : '')).join('');
-    } else {
-      bar.classList.add('alloc__bar--empty');
-      bar.innerHTML = '<span class="mono">AWAITING APPROVED BUDGET</span>';
-    }
-    $('#allocRows').innerHTML = alloc.map((a, i) => `
-      <li class="arow">
-        <i class="arow__sw" style="background:${a.amount != null ? shades[i % shades.length] : 'transparent'}"></i>
-        <div class="arow__what"><b>${esc(a.label)}</b><span>${esc(a.note || '')}</span></div>
-        <span class="arow__pct mono">${a.amount != null ? pct(a.amount, CFG.target) : '—'}</span>
-        <span class="arow__amt mono">${a.amount != null ? naira(a.amount) : 'TBC'}</span>
-      </li>`).join('');
-    $('#allocNote').textContent = known.length === alloc.length && alloc.length
-      ? 'PER SMARTAN’S APPROVED PROJECT BUDGET.'
-      : 'FIGURES WILL BE PUBLISHED WITH SMARTAN’S APPROVED PROJECT BUDGET.';
-    SIX.once(bar, () => bar.classList.add('is-in'), { threshold: 0.4 });
   })();
 
   /* ======================================================================
@@ -666,17 +711,37 @@
   $('#calcId').textContent = bid(nextId());
 
   /* ======================================================================
-     THE BUILDERS — wall + dot field
+     THE BUILDERS — searchable directory + dot field
+     One card per Builder, newest first, a page at a time (12 on phones,
+     24 elsewhere), with search by first name or Builder number.
      ====================================================================== */
   const wallEl = $('#wall');
-  const cellHTML = (b, isNew) => `
+  // Builder card: monogram, name, city, bricks, and a five-brick strip that lights
+  // up with the size of the contribution (1, 5, 10, 100 and 500+ bricks)
+  const TIERS = [1, 5, 10, 100, 500];
+  const initials = name => name.replace(/\./g, '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+  const titleCase = s => String(s || '').toLowerCase().replace(/(^|[\s,-])(\p{L})/gu, (m, a, l) => a + l.toUpperCase());
+  const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+  const cellHTML = (b, isNew) => {
+    const lit = TIERS.filter(t => b.bricks >= t).length;
+    return `
     <div class="wcell__in">
-      <div class="wcell__top mono"><span>${bid(b.id)}</span><span class="wcell__tag">${isNew ? 'NEW' : 'BUILDER'}</span></div>
-      <div class="wcell__name">${b.name ? esc(b.name).toUpperCase() : `BUILDER ${bid(b.id)}`}</div>
-      <div class="wcell__loc">${b.name ? esc(b.city || '') : 'Anonymous'}</div>
-      <div class="wcell__units mono"><b>${nf.format(b.units)}</b>BRICK${b.units === 1 ? '' : 'S'} LAID</div>
-      <span class="wcell__when" data-ts="${b.ts}">${ago(b.ts).toUpperCase()}</span>
+      <div class="wcell__top">
+        <span class="wcell__mark" aria-hidden="true">${b.name ? esc(initials(b.name)) : LOCK}</span>
+        <span class="wcell__id mono">${isNew ? '<span class="wcell__tag">NEW</span>' : ''}${bid(b.id)}</span>
+      </div>
+      <div class="wcell__who">
+        <b class="wcell__name">${b.name ? esc(b.name) : 'Anonymous Builder'}</b>
+        <span class="wcell__loc">${b.name ? (esc(titleCase(b.city)) || '&nbsp;') : 'Chose to stay anonymous'}</span>
+      </div>
+      <div class="wcell__foot">
+        <span class="wcell__units"><b class="mono">${nf.format(b.bricks)}</b> brick${b.bricks === 1 ? '' : 's'}</span>
+        <span class="wcell__when mono" data-ts="${b.ts}">${ago(b.ts).toUpperCase()}</span>
+      </div>
+      <span class="wcell__strip" aria-hidden="true">${TIERS.map((t, i) => `<i${i < lit ? ' class="on"' : ''}></i>`).join('')}</span>
     </div>`;
+  };
+  const cellEl = (b, isNew) => `<div class="wcell${b.name ? '' : ' is-anon'}${isNew ? ' is-new' : ''}" data-id="${b.id}">${cellHTML(b, isNew)}</div>`;
   const wallEmpty = () => `
     <div class="wall__empty">
       <span class="mono">${bid(1)}</span>
@@ -684,8 +749,80 @@
       <p>Every Builder appears here — by name, or anonymously if you prefer.</p>
       <button class="btn btn--primary btn--lg" data-acquire>Become Builder ${bid(1)} <span class="arr">→</span></button>
     </div>`;
-  if (recent.length) {
-    wallEl.innerHTML = recent.slice(0, 24).map(b => `<div class="wcell${b.name ? '' : ' is-anon'}">${cellHTML(b)}</div>`).join('');
+  const noMatch = q => `
+    <div class="wall__empty wall__empty--search">
+      <b>No Builder matches &ldquo;${esc(q)}&rdquo;.</b>
+      <p>Search by first name, or by Builder number such as #000123. Anonymous Builders can only be found by their number.</p>
+    </div>`;
+  // the live feed has one row per payment; the directory has one card per Builder
+  const byBuilder = list => {
+    const m = new Map();
+    list.forEach(r => {
+      const b = m.get(r.id);
+      if (b) { b.bricks += r.units; b.ts = Math.max(b.ts, r.ts); }
+      else m.set(r.id, { id: r.id, name: r.name, city: r.city, bricks: r.units, ts: r.ts });
+    });
+    return [...m.values()].sort((a, b) => b.id - a.id);
+  };
+  const revealCells = cells => cells.forEach((c, i) => {
+    c.style.setProperty('--d', `${Math.min(i, 11) * 40}ms`);
+    requestAnimationFrame(() => c.classList.add('is-in'));
+  });
+
+  const dir = {
+    q: '', page: 0, pages: 1, total: 0, req: 0,
+    size: () => (window.matchMedia('(max-width: 640px)').matches ? 12 : 24),
+    input: $('#bdirQ'), clear: $('#bdirClear'), meta: $('#bdirMeta'), more: $('#bdirMore'),
+  };
+  const setMeta = shown => {
+    if (!dir.meta) return;
+    dir.meta.textContent = dir.q
+      ? `${nf.format(dir.total)} ${dir.total === 1 ? 'MATCH' : 'MATCHES'}`
+      : dir.total ? `SHOWING ${nf.format(shown)} OF ${nf.format(dir.total)} BUILDERS` : '';
+  };
+  const render = (items, append) => {
+    wallEl.classList.remove('is-empty');
+    if (!append) wallEl.innerHTML = '';
+    if (!items.length && !append) {
+      wallEl.classList.add('is-empty');
+      wallEl.innerHTML = dir.q ? noMatch(dir.q) : wallEmpty();
+    } else {
+      const before = wallEl.children.length;
+      wallEl.insertAdjacentHTML('beforeend', items.map(b => cellEl(b)).join(''));
+      revealCells([...wallEl.children].slice(before));
+    }
+    const shown = $$('.wcell', wallEl).length;
+    setMeta(shown);
+    if (dir.more) dir.more.hidden = dir.page >= dir.pages || !items.length;
+  };
+  const loadPage = async append => {
+    const my = ++dir.req;
+    const page = append ? dir.page + 1 : 1;
+    wallEl.setAttribute('aria-busy', 'true');
+    if (dir.more) dir.more.disabled = true;
+    try {
+      const u = `/api/builders?page=${page}&size=${dir.size()}${dir.q ? `&q=${encodeURIComponent(dir.q)}` : ''}`;
+      const res = await fetch(u, { headers: { accept: 'application/json' } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (my !== dir.req) return;                 // a newer search has started
+      dir.page = data.page; dir.pages = data.pages;
+      if (!append || data.total) dir.total = data.total;
+      render(data.items || [], append);
+    } catch (e) {
+      if (my !== dir.req) return;
+      if (dir.meta) dir.meta.textContent = 'COULD NOT LOAD BUILDERS. TRY AGAIN.';
+    } finally {
+      if (my === dir.req) { wallEl.removeAttribute('aria-busy'); if (dir.more) dir.more.disabled = false; }
+    }
+  };
+
+  // first paint: the most recent Builders from the page data, then the directory takes over
+  const firstPaint = byBuilder(recent).slice(0, dir.size());
+  if (firstPaint.length) {
+    wallEl.innerHTML = firstPaint.map(b => cellEl(b)).join('');
+    dir.total = S.builders;
+    setMeta(firstPaint.length);
   } else {
     wallEl.classList.add('is-empty');
     wallEl.innerHTML = wallEmpty();
@@ -697,40 +834,67 @@
       SIX.once(c, () => c.classList.add('is-in'), { threshold: 0 });
     });
   });
-  const pushWall = b => {
+
+  if (CFG.liveApi && dir.input) {
+    SIX.once($('#builders'), () => loadPage(false), { rootMargin: '600px 0px', threshold: 0 });
+    let t = 0;
+    const search = () => {
+      const q = dir.input.value.trim();
+      dir.clear.hidden = !dir.input.value;
+      if (q === dir.q) return;
+      dir.q = q;
+      loadPage(false);
+    };
+    dir.input.addEventListener('input', () => { clearTimeout(t); t = setTimeout(search, 300); dir.clear.hidden = !dir.input.value; });
+    dir.input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); clearTimeout(t); search(); dir.input.blur(); }
+      if (e.key === 'Escape' && dir.input.value) { dir.input.value = ''; search(); }
+    });
+    dir.clear.addEventListener('click', () => { dir.input.value = ''; search(); dir.input.focus(); });
+    dir.more.addEventListener('click', () => loadPage(true));
+  } else {
+    // no live server (static preview): the search needs one, so hide it
+    const bar = $('.bdir__bar');
+    if (bar) bar.hidden = true;
+  }
+
+  // a new payment arrives: the Builder's card moves to the front (or appears there)
+  const pushWall = r => {
+    if (dir.q) return;                               // the visitor is searching; leave their results alone
     if (wallEl.classList.contains('is-empty')) { wallEl.classList.remove('is-empty'); wallEl.innerHTML = ''; }
-    const cells = $$('.wcell', wallEl);
-    if (cells.length < 24) {
-      wallEl.insertAdjacentHTML('afterbegin', `<div class="wcell is-in${b.name ? '' : ' is-anon'} is-new">${cellHTML(b, true)}</div>`);
-      const cell = wallEl.firstElementChild;
-      setTimeout(() => { cell.classList.remove('is-new'); const tag = $('.wcell__tag', cell); if (tag) tag.textContent = 'BUILDER'; }, 6000);
-      return;
+    const existing = $(`.wcell[data-id="${r.id}"]`, wallEl);
+    let b = { id: r.id, name: r.name, city: r.city, bricks: r.units, ts: r.ts };
+    if (existing) {
+      const prev = Number((existing.querySelector('.wcell__units b') || {}).textContent?.replace(/\D/g, '')) || 0;
+      b = { ...b, bricks: prev + r.units };
+      existing.remove();
+    } else {
+      dir.total += 1;
     }
-    // replace the oldest visible entry so the wall always shows the most recent Builders
-    const visible = cells.filter(c => c.offsetParent !== null);
-    if (!visible.length) return;
-    const idOf = c => Number(c.querySelector('.wcell__top span').textContent.slice(1));
-    const cell = visible.reduce((a, c) => (idOf(c) < idOf(a) ? c : a));
-    cell.className = `wcell is-in${b.name ? '' : ' is-anon'} is-new`;
-    cell.innerHTML = cellHTML(b, true);
-    setTimeout(() => {
-      cell.classList.remove('is-new');
-      const tag = $('.wcell__tag', cell);
-      if (tag) tag.textContent = 'BUILDER';
-    }, 6000);
+    wallEl.insertAdjacentHTML('afterbegin', cellEl(b, true));
+    const cell = wallEl.firstElementChild;
+    cell.classList.add('is-in');
+    setMeta($$('.wcell', wallEl).length);
+    setTimeout(() => { cell.classList.remove('is-new'); const tag = $('.wcell__tag', cell); if (tag) tag.remove(); }, 6000);
   };
 
-  // dot field — each lit dot is one Builder
+  // dot field — each lit dot is one Builder (or several, once there are thousands)
   const dots = (() => {
     const cv = $('#dotsCanvas');
     const ctx = cv.getContext('2d');
-    let order = [], cols = 0, rows = 0, gap = 9, pulses = [], raf = 0;
+    const label = $('#dotsLabel');
+    let order = [], cols = 0, rows = 0, gap = 9, pulses = [], raf = 0, per = 1, lit = 0;
     function layout() {
       const W = cv.clientWidth || cv.parentElement.clientWidth;
       gap = W < 640 ? 7 : 9;
       cols = Math.max(10, Math.floor(W / gap));
-      const total = Math.max(2000, Math.round(S.builders * 1.6));
+      // the field never grows past a fixed height; past that, one dot stands for several Builders
+      const capacity = cols * (W < 640 ? 34 : 26);
+      per = S.builders > capacity * 0.85 ? Math.ceil(S.builders / (capacity * 0.85)) : 1;
+      lit = Math.ceil(S.builders / per);
+      const total = Math.min(capacity, Math.max(2000, Math.round(lit * 1.6)));
       rows = Math.ceil(total / cols);
+      if (label) label.textContent = per > 1 ? `BUILDERS SO FAR. EACH LIT DOT IS ${nf.format(per)} BUILDERS.` : 'BUILDERS SO FAR. EACH LIT DOT IS A PERSON.';
       const H = rows * gap;
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       cv.style.height = `${H}px`;
@@ -744,13 +908,12 @@
     }
     function draw(now = performance.now()) {
       ctx.clearRect(0, 0, cv.width, cv.height);
-      const n = S.builders;
       order.forEach((d, i) => {
-        const lit = i < n;
-        const fresh = lit && i >= n - 14;
-        ctx.fillStyle = fresh ? `rgb(${COLOR.fg})` : lit ? `rgba(${COLOR.accent},.9)` : `rgba(${COLOR.fg},${SIX.theme() === 'light' ? 0.2 : 0.09})`;
+        const on = i < lit;
+        const fresh = on && i >= lit - 14;
+        ctx.fillStyle = fresh ? `rgb(${COLOR.fg})` : on ? `rgba(${COLOR.accent},.9)` : `rgba(${COLOR.fg},${SIX.theme() === 'light' ? 0.2 : 0.09})`;
         ctx.beginPath();
-        ctx.arc(d.x, d.y, lit ? 1.5 : 1, 0, Math.PI * 2);
+        ctx.arc(d.x, d.y, on ? 1.5 : 1, 0, Math.PI * 2);
         ctx.fill();
       });
       pulses = pulses.filter(p => now - p.t < 1400);
@@ -769,8 +932,11 @@
     document.addEventListener('six:theme', () => draw());
     return {
       add() {
-        const d = order[S.builders - 1];
-        if (!d) { layout(); return; }
+        const next = Math.ceil(S.builders / per);
+        if (next > order.length * 0.85) { layout(); return; }
+        lit = next;
+        const d = order[lit - 1];
+        if (!d) return;
         pulses.push({ x: d.x, y: d.y, t: performance.now() });
         cancelAnimationFrame(raf);
         draw();
@@ -924,18 +1090,10 @@
         $('.arr', more).textContent = open ? '↑' : '→';
       });
     } else {
-      list.innerHTML = '<li class="lrow lrow--empty"><b>No entries yet.</b><span>The first verified allocation will be published here, with its date, reference and amount.</span></li>';
+      list.innerHTML = '<li class="lrow lrow--empty"><b>No entries yet.</b><span>The first verified entry will be published here, with its date, reference and amount.</span></li>';
       more.hidden = true;
       $('.lrow--h').hidden = true;
     }
-
-    const money = (id, v) => {
-      if (v == null) { $(`#${id}`).textContent = '—'; $(`#${id}Note`).textContent = 'PUBLISHED ONCE VERIFIED'; return; }
-      $(`#${id}`).textContent = naira(v);
-      $(`#${id}Note`).textContent = `${pct(v, S.raised)} OF RAISED`;
-    };
-    money('lsAllocated', D.allocated);
-    money('lsSpent', D.spent);
 
     const ups = D.updates || [];
     $('#updates').innerHTML = ups.length
@@ -1092,7 +1250,13 @@
       ['PAYSTACK REF', esc(r.ref || '—')],
       ['CAMPAIGN', CFG.campaignId],
     ].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
-    $('#acqReceiptNote').textContent = 'Your official receipt is sent to your email. Impact Units are campaign contribution units, not securities.';
+    // be honest about the email: on a very busy day it can wait for the next morning's run
+    const mailNote = r.mail === 'quota'
+      ? 'Because of a very high number of Builders today, your emailed receipt will arrive by tomorrow morning. Keep this screen or download your card in the meantime.'
+      : r.mail === 'error' || r.mail === 'off'
+        ? 'Your emailed receipt will follow shortly. Keep this screen or download your card in the meantime.'
+        : 'Your official receipt is sent to your email.';
+    $('#acqReceiptNote').textContent = `${mailNote} Impact Units are campaign contribution units, not securities.`;
     const text = shareText(r);
     const link = cardUrl(r);
     $('#shareWa').href = `https://wa.me/?text=${encodeURIComponent(`${text}\n${link}`)}`;
@@ -1206,7 +1370,7 @@
     const q = new URLSearchParams(window.location.search);
     const clean = () => history.replaceState(null, '', window.location.pathname + window.location.hash);
     if (q.get('receipt') === '1' && q.get('builder')) {
-      const r = { id: Number(q.get('builder')), units: Number(q.get('units')) || 0, name: q.get('name') || '', ref: q.get('ref') || '', rn: q.get('rn') || '' };
+      const r = { id: Number(q.get('builder')), units: Number(q.get('units')) || 0, name: q.get('name') || '', ref: q.get('ref') || '', rn: q.get('rn') || '', mail: q.get('mail') || '' };
       SIX.on('ready', () => setTimeout(() => { showReceipt(r); clean(); }, 400));
       return;
     }
@@ -1393,13 +1557,28 @@
     if (data.updatedAt) S.updated = new Date(data.updatedAt);
     if (changed) { dots.add(); bricks.add(); refresh(); }
   };
+  // a small notice under the header when live figures cannot be loaded (never the console)
+  const liveBar = $('#liveBar');
+  const setLiveState = state => {
+    if (!liveBar) return;
+    liveBar.hidden = state === 'ok';
+    if (state === 'stale') $('#liveBarText').textContent = 'Live figures are delayed. Showing the latest saved figures.';
+    if (state === 'offline') $('#liveBarText').textContent = 'Live updates paused. Reconnecting…';
+    if (state === 'down') $('#liveBarText').textContent = 'Live figures are temporarily unavailable. Please check back shortly.';
+  };
+  // a brief database hiccup is not worth a notice: only say so when the figures are over 2 minutes old
+  const oldFigures = d => d.stale && (!d.asOf || Date.now() - d.asOf > 120000);
+  if (CFG.liveDown) setLiveState('down');
+  else if (oldFigures(D)) setLiveState('stale');
+
   if (CFG.liveApi) {
+    let fails = 0;
     const poll = () => {
       if (document.hidden) return;
       fetch(CFG.liveApi, { cache: 'no-store' })
-        .then(r => (r.ok ? r.json() : null))
-        .then(d => d && SIX.applyLive(d))
-        .catch(() => {});
+        .then(r => (r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))))
+        .then(d => { fails = 0; setLiveState(oldFigures(d) ? 'stale' : 'ok'); SIX.applyLive(d); })
+        .catch(() => { fails += 1; if (fails >= 2) setLiveState(CFG.liveDown ? 'down' : 'offline'); });
     };
     SIX.on('ready', () => setInterval(poll, 20000));
     document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });

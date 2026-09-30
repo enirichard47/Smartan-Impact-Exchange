@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { getLiveCampaign, publicSettings } from '@/lib/campaign';
-import { hasPayments } from '@/lib/env';
+import { hasDatabase, hasPayments } from '@/lib/env';
 
 // The landing page. The design lives in site/index.html (plain HTML/CSS/JS
 // served from /public); the server injects live campaign data so the first
@@ -21,7 +21,7 @@ const json = (v: unknown) => JSON.stringify(v).replace(/</g, '\\u003c');
 export async function GET() {
   const [html, live] = await Promise.all([getTemplate(), getLiveCampaign()]);
   const boot = `<script>(function(){var C=window.SIX_CONFIG;if(!C)return;Object.assign(C,${json(publicSettings())});`
-    + `C.liveApi='/api/campaign';${hasPayments() ? "C.checkoutApi='/api/checkout';" : ''}`
+    + `C.liveApi='/api/campaign';${hasPayments() ? "C.checkoutApi='/api/checkout';" : ''}${!live && hasDatabase() ? 'C.liveDown=true;' : ''}`
     + `var L=${json(live)};if(L){Object.assign(C.campaign,L);}})();</script>`;
 
   const tag = '<script src="js/config.js"></script>';

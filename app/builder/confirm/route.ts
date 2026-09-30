@@ -3,6 +3,7 @@ import { confirmTransaction } from '@/lib/confirm';
 import { env, hasPayments } from '@/lib/env';
 import { firstName, receiptNo } from '@/lib/format';
 import { verifyTransaction } from '@/lib/paystack';
+import { report } from '@/lib/report';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,7 @@ export async function GET(req: Request) {
         name: firstName(done.name),
         ref: reference,
         rn: receiptNo(done.receiptNumber) || '',
+        mail: done.receiptMail || '',
       });
       return back(q.toString());
     }
@@ -34,7 +36,7 @@ export async function GET(req: Request) {
     }
     return back('payment=failed');
   } catch (e) {
-    console.error('confirm redirect failed', e);
+    await report('payments', `Payment ${reference} could not be confirmed when the donor returned from Paystack. The Paystack webhook should still record it; check Contributions.`, e);
     // The webhook will still record a successful payment; tell the Builder to check their email.
     return back(`payment=pending&ref=${encodeURIComponent(reference)}`);
   }

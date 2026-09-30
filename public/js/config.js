@@ -10,7 +10,7 @@
    ========================================================================== */
 window.SIX_CONFIG = {
   campaignId: 'SH-2026-001',
-  target: 300000000,          // ₦
+  target: 400000000,          // ₦
   unitPrice: 10000,           // ₦ per Impact Unit — 1 unit = 1 brick, also the minimum contribution
   siteUrl: 'https://smartanhouse.org',   // used in share links and the Builder card
 
@@ -29,18 +29,9 @@ window.SIX_CONFIG = {
     builders: 0,              // number of Builders
     updatedAt: null,          // ISO timestamp of the last verified update
 
-    allocated: null,          // ₦ allocated to budget lines (null = not yet published)
-    spent: null,              // ₦ spent (null = not yet published)
 
-    // From Smartan's APPROVED project budget. Leave amounts null until approved.
-    allocation: [
-      { key: 'facility',   label: 'Facility',                 note: 'Acquisition, renovation and build-out of the new Smartan House facility.', amount: null },
-      { key: 'acorn',      label: 'Acorn Incubator',          note: 'Fit-out of the Acorn Incubator Hub.',                                      amount: null },
-      { key: 'technology', label: 'Technology',               note: 'Connectivity, power and devices.',                                         amount: null },
-      { key: 'learning',   label: 'Learning infrastructure',  note: 'Classrooms, studios and study spaces.',                                    amount: null },
-      { key: 'equipment',  label: 'Equipment',                note: 'Furniture and equipment for every space.',                                 amount: null },
-      { key: 'operations', label: 'Operational setup',        note: 'The systems needed to open the doors.',                                    amount: null },
-    ],
+    // Ledger category names (the budget itself is private and never sent to the page).
+    categories: [],
 
     // Verified build milestones. status: 'complete' | 'in-progress' | 'upcoming'
     milestones: [

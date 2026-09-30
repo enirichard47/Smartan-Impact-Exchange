@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { CAMPAIGN, env, hasPayments } from '@/lib/env';
 import { initializeTransaction, newReference } from '@/lib/paystack';
+import { allowCheckout, clientIp } from '@/lib/rate-limit';
+import { report } from '@/lib/report';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +28,14 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message || 'Please check your details.' }, { status: 400 });
   const o = parsed.data;
 
+  // stop scripts (or a stuck button) from opening thousands of payments
+  if (!(await allowCheckout(clientIp(req), o.email))) {
+    return NextResponse.json(
+      { error: 'Too many payment attempts in a short time. Please wait a minute, then try again.' },
+      { status: 429, headers: { 'Retry-After': '60' } },
+    );
+  }
+
   const reference = newReference();
   const amountKobo = o.units * CAMPAIGN.unitPriceKobo;
 
@@ -40,7 +50,7 @@ export async function POST(req: Request) {
     display: o.display,
   });
   if (error) {
-    console.error('checkout insert failed', error);
+    await report('payments', 'A donor could not start a payment: the database did not save their checkout.', error);
     return NextResponse.json({ error: 'We could not start your payment. Please try again.' }, { status: 500 });
   }
 
@@ -62,7 +72,7 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ url: tx.authorization_url, reference });
   } catch (e) {
-    console.error('paystack initialize failed', e);
+    await report('payments', 'A donor could not start a payment: Paystack did not respond. Check the Paystack key and dashboard.', e);
     await db().from('contributions').update({ status: 'failed' }).eq('reference', reference);
     return NextResponse.json({ error: 'Payment could not be started. Please try again in a moment.' }, { status: 502 });
   }

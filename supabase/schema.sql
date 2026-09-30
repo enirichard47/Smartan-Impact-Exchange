@@ -138,6 +138,115 @@ begin
 end;
 $$;
 
+-- Clear every contribution and Builder (e.g. test payments before launch) and
+-- restart Builder and receipt numbers at 1. Called from the admin page only.
+-- Campaign content (ledger, updates, milestones, budget, settings) is kept.
+-- Runs with the rights of its owner (security definer), because restarting the
+-- numbering needs more than the app's own database role is allowed to do.
+-- Only the server can call it (see the revoke at the end of this file).
+create or replace function reset_campaign()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from contributions where true;
+  delete from builders where true;
+  perform setval('builder_number_seq', 1, false);   -- the next Builder is #000001
+  perform setval('receipt_number_seq', 1, false);   -- the next receipt is SIX-2026-000001
+end;
+$$;
+
+-- ---------- Receipt emails: claim before sending ------------------------------
+-- A receipt is "claimed" before it is emailed, so the live payment path, the daily
+-- catch-up job and the admin button can never send the same receipt twice.
+-- A claim older than 15 minutes (a send that crashed) can be claimed again.
+alter table contributions add column if not exists receipt_claimed_at timestamptz;
+
+-- Claim one receipt (live path). True when this caller may send it.
+create or replace function claim_receipt(p_reference text)
+returns boolean
+language plpgsql
+as $$
+declare n integer;
+begin
+  update contributions set receipt_claimed_at = now()
+   where reference = p_reference and status = 'success' and receipt_sent_at is null
+     and (receipt_claimed_at is null or receipt_claimed_at < now() - interval '15 minutes');
+  get diagnostics n = row_count;
+  return n = 1;
+end;
+$$;
+
+-- Claim up to p_limit unsent receipts, oldest payment first (daily job, admin button).
+-- skip locked: two runs at the same moment get different receipts, never the same one.
+create or replace function claim_unsent_receipts(p_limit integer)
+returns table (
+  reference       text,
+  receipt_number  integer,
+  builder_number  integer,
+  units           integer,
+  total_units     bigint,
+  amount_kobo     bigint,
+  name            text,
+  email           text,
+  paid_at         timestamptz
+)
+language plpgsql
+as $$
+begin
+  return query
+  with picked as (
+    select c.id from contributions c
+     where c.status = 'success' and c.receipt_sent_at is null
+       and (c.receipt_claimed_at is null or c.receipt_claimed_at < now() - interval '15 minutes')
+     order by c.paid_at
+     limit p_limit
+     for update skip locked
+  ), claimed as (
+    update contributions c set receipt_claimed_at = now()
+      from picked where c.id = picked.id
+    returning c.*
+  )
+  select cl.reference, cl.receipt_number, b.number, cl.units,
+         (select coalesce(sum(x.units), 0) from contributions x where x.builder_id = b.id and x.status = 'success'),
+         cl.amount_kobo, cl.name, cl.email, cl.paid_at
+    from claimed cl join builders b on b.id = cl.builder_id
+   order by cl.paid_at;
+end;
+$$;
+
+-- Rate limiting for "Pay" (checkout): counts attempts per key (a hashed IP address
+-- or an email) in fixed time windows. Shared by every server instance, so the
+-- limit holds however many copies of the site are running.
+create table if not exists rate_limits (
+  key           text        not null,
+  window_start  timestamptz not null,
+  hits          integer     not null default 0,
+  primary key (key, window_start)
+);
+
+-- Records one attempt and says whether it is allowed (true) or over the limit (false).
+create or replace function hit_rate_limit(p_key text, p_limit integer, p_window_seconds integer)
+returns boolean
+language plpgsql
+as $$
+declare
+  w timestamptz := to_timestamp(floor(extract(epoch from now()) / p_window_seconds) * p_window_seconds);
+  n integer;
+begin
+  insert into rate_limits (key, window_start, hits) values (p_key, w, 1)
+  on conflict (key, window_start) do update set hits = rate_limits.hits + 1
+  returning hits into n;
+  -- tidy up now and then, so the table never grows large
+  if random() < 0.01 then
+    delete from rate_limits where window_start < now() - interval '1 day';
+  end if;
+  return n <= p_limit;
+end;
+$$;
+
 -- Live totals for the page.
 create or replace view campaign_totals as
   select coalesce(sum(amount_kobo), 0)::bigint as raised_kobo,
@@ -216,6 +325,17 @@ create table if not exists settings (
   value  jsonb
 );
 
+-- Problems the server ran into (a failed receipt email, Paystack or the database
+-- not responding), shown to admins as "System alerts" on the admin Overview.
+create table if not exists system_log (
+  id       bigint generated always as identity primary key,
+  at       timestamptz not null default now(),
+  source   text not null,                               -- payments, email, database, admin
+  message  text not null,                               -- plain words, for the admin
+  detail   text                                         -- the technical error, shortened
+);
+create index if not exists system_log_at_idx on system_log (at desc);
+
 -- ---------- Seeds (only inserted if missing) --------------------------------
 
 insert into milestones (position, label) values
@@ -238,7 +358,7 @@ insert into impact_index (position, label) values
 on conflict (position) do nothing;
 
 insert into settings (key, value) values
-  ('allocated_kobo', 'null'::jsonb), ('spent_kobo', 'null'::jsonb)
+  ('allocated_kobo', 'null'::jsonb), ('spent_kobo', 'null'::jsonb), ('opening_kobo', '0'::jsonb)
 on conflict (key) do nothing;
 
 -- ---------- Lock everything down --------------------------------------------
@@ -251,7 +371,13 @@ alter table milestones        enable row level security;
 alter table budget_lines      enable row level security;
 alter table impact_index      enable row level security;
 alter table settings          enable row level security;
+alter table system_log        enable row level security;
+alter table rate_limits       enable row level security;
 
 revoke all on campaign_totals from anon, authenticated;
 revoke execute on function confirm_contribution(text, bigint, text, bigint, text, timestamptz) from public, anon, authenticated;
 revoke execute on function daily_bricks(integer) from public, anon, authenticated;
+revoke execute on function reset_campaign() from public, anon, authenticated;
+revoke execute on function hit_rate_limit(text, integer, integer) from public, anon, authenticated;
+revoke execute on function claim_receipt(text) from public, anon, authenticated;
+revoke execute on function claim_unsent_receipts(integer) from public, anon, authenticated;

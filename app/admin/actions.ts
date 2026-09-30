@@ -2,9 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { endSession, parseNairaToKobo, passwordMatches, requireAdmin, startSession } from '@/lib/admin';
+import { CLEAR_PHRASE, endSession, parseNairaToKobo, passwordMatches, requireAdmin, startSession } from '@/lib/admin';
+import { invalidateAllBuilders } from '@/lib/builders';
 import { invalidateCampaign } from '@/lib/campaign';
 import { db } from '@/lib/db';
+import { report } from '@/lib/report';
+import { runDaily } from '@/lib/automation';
+import { sendUnsentReceipts } from '@/lib/receipts';
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? '').trim();
 const dateOrNull = (f: FormData, k: string) => str(f, k) || null;
@@ -92,12 +96,80 @@ export async function saveIndex(form: FormData) {
   await done('index');
 }
 
-/* ---------- allocated / spent ---------- */
-export async function saveTotals(form: FormData) {
+/* ---------- Settings view: these save in place (no page reload) and report back ---------- */
+export type FormState = { ok: boolean; message: string; at: number } | null;
+const reply = (ok: boolean, message: string): FormState => ({ ok, message, at: Date.now() });
+
+async function raisedShown() {
+  const [t, o] = await Promise.all([
+    db().from('campaign_totals').select('raised_kobo').single(),
+    db().from('settings').select('value').eq('key', 'opening_kobo').maybeSingle(),
+  ]);
+  return Number(t.data?.raised_kobo || 0) + (Number(o.data?.value) || 0);
+}
+const nairaText = (kobo: number) => `₦${new Intl.NumberFormat('en-NG').format(Math.round(kobo / 100))}`;
+
+export async function saveTotals(_: FormState, form: FormData): Promise<FormState> {
   await requireAdmin();
-  await run(db().from('settings').upsert([
+  const { error } = await db().from('settings').upsert([
     { key: 'allocated_kobo', value: parseNairaToKobo(form.get('allocated')) },
     { key: 'spent_kobo', value: parseNairaToKobo(form.get('spent')) },
-  ]));
-  await done('totals');
+  ]);
+  if (error) return reply(false, `Not saved. The database said: ${error.message}`);
+  revalidatePath('/admin');
+  return reply(true, 'Saved.');
+}
+
+// campaign starting amount (added to the public "raised" total)
+export async function saveOpening(_: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  const { error } = await db().from('settings').upsert({ key: 'opening_kobo', value: parseNairaToKobo(form.get('opening')) || 0 });
+  if (error) return reply(false, `Not saved. The database said: ${error.message}`);
+  invalidateCampaign();
+  revalidatePath('/admin');
+  return reply(true, `Saved. The public page now shows ${nairaText(await raisedShown())} raised.`);
+}
+
+// clear every contribution and Builder
+export async function clearAll(_: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  if (str(form, 'confirm') !== CLEAR_PHRASE) return reply(false, `Nothing was cleared. Type ${CLEAR_PHRASE} exactly to confirm.`);
+  const { error } = await db().rpc('reset_campaign');
+  if (error) {
+    await report('admin', 'Clear everything failed. Nothing was deleted.', error);
+    // PGRST202: the function is not in the database yet (supabase/schema.sql has not been re-run)
+    return reply(false, error.code === 'PGRST202'
+      ? 'Nothing was cleared. The database needs a one-time update first: in Supabase, open SQL Editor, paste the whole of supabase/schema.sql and click Run. Then try again.'
+      : `Nothing was cleared. The database said: ${error.message}. If it mentions permissions or "owner", run the latest supabase/schema.sql in Supabase and try again.`);
+  }
+  invalidateAllBuilders();
+  invalidateCampaign();
+  revalidatePath('/admin');
+  return reply(true, 'Done. All contributions and Builders were removed, and numbering starts again at #000001.');
+}
+
+/* ---------- emails and the daily check (Settings) ---------- */
+export async function sendReceiptsNow(_: FormState): Promise<FormState> {
+  await requireAdmin();
+  try {
+    const r = await sendUnsentReceipts();
+    revalidatePath('/admin');
+    if (r.off) return reply(false, 'Email is not set up yet. Add BREVO_API_KEY and RECEIPT_FROM, then try again.');
+    if (!r.sent && !r.waiting) return reply(true, 'Nothing to send. Every receipt has already gone out.');
+    const parts = [`Sent ${r.sent} receipt${r.sent === 1 ? '' : 's'}.`];
+    if (r.quota) parts.push(`Brevo's daily limit was reached; ${r.waiting} will go out automatically tomorrow morning.`);
+    else if (r.waiting) parts.push(`${r.waiting} could not be sent yet and will be retried automatically.`);
+    return reply(!r.errors, parts.join(' '));
+  } catch (e) {
+    return reply(false, `Nothing was sent. The database said: ${e instanceof Error ? e.message : String(e)}. If it mentions a missing function, run the latest supabase/schema.sql.`);
+  }
+}
+
+export async function runDailyNow(_: FormState): Promise<FormState> {
+  await requireAdmin();
+  const run = await runDaily('admin');
+  revalidatePath('/admin');
+  return reply(run.ok, run.ok
+    ? `Done. Database OK. ${run.email} Sent ${run.sent} waiting receipt${run.sent === 1 ? '' : 's'}; ${run.waiting} still waiting.`
+    : `The check found a problem: ${!run.database ? 'the database did not answer.' : run.email} See System alerts on the Overview for details.`);
 }
