@@ -1921,6 +1921,8 @@ html.is-opening .opening.is-done { clip-path: inset(50% 0 50% 0); opacity: 0; po
 .foot__legal a, .acq__sub a, .check a { color: var(--accent-fg); text-underline-offset: 3px; }
 .foot__legal a { color: var(--muted); text-decoration: none; }
 .foot__legal a:hover { color: var(--text); }
+/* team entrance: the copyright line links to /admin but looks like plain text */
+.foot__copy, .foot__copy:hover, .foot__copy:visited { color: inherit; text-decoration: none; cursor: text; }
 
 /* ======================================================================
    MOBILE POLISH

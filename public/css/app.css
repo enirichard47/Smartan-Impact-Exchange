@@ -474,3 +474,6 @@ html { -webkit-tap-highlight-color: transparent; }
 .ad-actions > .ad-form { flex: 0 0 auto; }
 .ad-actions .ad-ok, .ad-actions .ad-error { flex-basis: 100%; }
 #automation { scroll-margin-top: 24px; }
+/* sign out link while it is working */
+.ad-link .ad-spin { display: inline-block; margin-right: 6px; vertical-align: -2px; }
+.ad-link[disabled] { opacity: .75; cursor: progress; }

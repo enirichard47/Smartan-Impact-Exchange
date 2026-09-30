@@ -1584,4 +1584,5 @@
     document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
   }
 
+
 })();

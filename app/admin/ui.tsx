@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { logout } from './actions';
+import { SubmitButton } from './submit-button';
 
 export const VIEWS = [
   { key: 'overview', label: 'Overview', icon: 'M3 3h7v7H3zM14 3h7v4h-7zM14 11h7v10h-7zM3 14h7v7H3z' },
@@ -36,7 +37,7 @@ export function Shell({ view, title, sub, actions, saved, warn, children }: {
         </nav>
         <div className="ad-side__foot">
           <a className="ad-link" href="/" target="_blank" rel="noopener">View public site ↗</a>
-          <form action={logout}><button className="ad-link" type="submit">Sign out</button></form>
+          <form action={logout}><SubmitButton className="ad-link" pending="Signing out…">Sign out</SubmitButton></form>
         </div>
       </aside>
 

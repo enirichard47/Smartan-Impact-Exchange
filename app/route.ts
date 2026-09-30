@@ -31,7 +31,9 @@ export async function GET() {
   return new Response(out, {
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30',
+      // Browsers: always check for a newer page (max-age=0, must-revalidate), so a fix is
+      // seen as soon as it is deployed. Vercel's network: keep serving it fast (s-maxage).
+      'Cache-Control': 'public, max-age=0, must-revalidate, s-maxage=10, stale-while-revalidate=30',
     },
   });
 }

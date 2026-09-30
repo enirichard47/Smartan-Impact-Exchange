@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { adminConfigured, isAdmin } from '@/lib/admin';
 import { hasDatabase, hasPayments } from '@/lib/env';
 import { login } from './actions';
+import { SubmitButton } from './submit-button';
 import { Shell, VIEWS, type View } from './ui';
 import { Budget, Contributions, Index, Ledger, Milestones, Overview, Totals, Updates } from './views';
 
@@ -47,7 +48,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
         <form action={login} className="ad-form">
           <label><span>Password</span><input type="password" name="password" required autoFocus autoComplete="current-password" /></label>
           {q.error ? <p className="ad-error" role="alert">That password is not right.</p> : null}
-          <button className="ad-btn ad-btn--primary ad-btn--block" type="submit">Sign in</button>
+          <SubmitButton className="ad-btn ad-btn--primary ad-btn--block" pending="Signing in…">Sign in</SubmitButton>
         </form>
       </Gate>
     );
