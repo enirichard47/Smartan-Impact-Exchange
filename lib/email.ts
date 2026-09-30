@@ -23,14 +23,24 @@ export type Receipt = {
 export type SendResult = { status: 'sent' | 'off' | 'quota' | 'error'; detail?: string };
 
 // 'Smartan House <builders@smartanhouse.org>' -> { name, email }
+// Tolerates the value being pasted with quotes around it (Vercel keeps them as part of the value).
 function parseAddress(v: string) {
-  const m = /^\s*(.*?)\s*<\s*([^>]+?)\s*>\s*$/.exec(v);
-  return m ? { name: m[1].replace(/^"|"$/g, '') || undefined, email: m[2] } : { email: v.trim() };
+  let s = v.trim();
+  while (/^(["']).*\1$/.test(s)) s = s.slice(1, -1).trim();
+  const m = /^(.*?)\s*<\s*([^>]+?)\s*>$/.exec(s);
+  const name = m ? m[1].replace(/^["']|["']$/g, '').trim() : '';
+  return { ...(name ? { name } : {}), email: (m ? m[2] : s).trim() };
 }
+const validEmail = (e: string) => /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(e);
 
 // Sends the Builder receipt through Brevo. Never throws, so email can never block a payment.
 export async function sendReceipt(r: Receipt): Promise<SendResult> {
   if (!hasEmail()) return { status: 'off' };
+  // catch a mistyped setting before Brevo does, with a message that says what to fix
+  const from = parseAddress(env.receiptFrom);
+  if (!validEmail(from.email)) {
+    return { status: 'error', detail: `RECEIPT_FROM is not a valid email address ("${env.receiptFrom}"). Set it to e.g. Smartan House <thesmartanhouse@gmail.com> in Vercel's environment variables, then redeploy.` };
+  }
   const card = `${env.siteUrl}/builder/${r.builderNumber}`;
   const cardImage = `${card}/opengraph-image`;
   const rn = receiptNo(r.receiptNumber);
@@ -72,7 +82,7 @@ export async function sendReceipt(r: Receipt): Promise<SendResult> {
       method: 'POST',
       headers: { 'api-key': env.brevoKey, 'Content-Type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({
-        sender: parseAddress(env.receiptFrom),
+        sender: from,
         to: [{ email: r.email, name: r.name }],
         ...(env.replyTo ? { replyTo: parseAddress(env.replyTo) } : {}),
         subject: `Your Builder receipt: ${rn || builderId(r.builderNumber)}`,
