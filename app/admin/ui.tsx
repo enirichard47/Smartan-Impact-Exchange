@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { logout } from './actions';
+import { MobileNav } from './mobile-nav';
 import { SubmitButton } from './submit-button';
 
 export const VIEWS = [
@@ -13,6 +14,8 @@ export const VIEWS = [
   { key: 'totals', label: 'Settings', icon: 'M3 7h18v12H3zM3 7l3-3h12l3 3M16 13h2' },
 ] as const;
 export type View = (typeof VIEWS)[number]['key'];
+// the four sections that get their own tab on phones; the rest go under "More"
+const MOBILE_TABS: readonly string[] = ['overview', 'contributions', 'ledger', 'totals'];
 
 export const Icon = ({ d }: { d: string }) => (
   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>
@@ -23,6 +26,13 @@ export function Shell({ view, title, sub, actions, saved, warn, children }: {
 }) {
   return (
     <div className="ad">
+      {/* phones and small tablets: top bar + bottom tabs (the sidebar below is hidden there) */}
+      <MobileNav
+        view={view}
+        primary={VIEWS.filter(v => MOBILE_TABS.includes(v.key)).map(({ key, label, icon }) => ({ key, label: key === 'contributions' ? 'Payments' : label, icon }))}
+        more={VIEWS.filter(v => !MOBILE_TABS.includes(v.key)).map(({ key, label, icon }) => ({ key, label, icon }))}
+        signOut={<form action={logout}><SubmitButton className="ad-btn ad-btn--ghost ad-btn--block" pending="Signing out…">Sign out</SubmitButton></form>}
+      />
       <aside className="ad-side">
         <a className="ad-brand" href="/admin">
           <img src="/assets/logo-mark.png" alt="" width={28} height={26} />
