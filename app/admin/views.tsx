@@ -4,7 +4,7 @@ import { CAMPAIGN, hasEmail } from '@/lib/env';
 import { builderId, naira, num, receiptNo, watDate, watTime } from '@/lib/format';
 import {
   addLedger, addUpdate, deleteLedger, deleteUpdate,
-  clearAll, runDailyNow, saveBudgetLine, saveIndex, saveMilestone, saveOpening, saveTotals, sendReceiptsNow,
+  checkPaymentsNow, clearAll, runDailyNow, saveBudgetLine, saveIndex, saveMilestone, saveOpening, saveTotals, sendReceiptsNow,
 } from './actions';
 import { lastDailyRun } from '@/lib/automation';
 import { ConfirmButton } from './confirm-button';
@@ -439,10 +439,13 @@ export async function Totals() {
             <Kpi label="Receipts waiting" value={num(waiting)} sub={!hasEmail() ? 'Email is not set up yet' : waiting ? 'Sent by the next run, or with the button below' : 'Every receipt has been sent'} />
             <Kpi label="Last automatic check" value={lastRun ? when(lastRun.at) : 'Not run yet'} sub={lastRun ? (lastRun.ok ? `OK${lastRun.trigger === 'admin' ? ', run from the admin' : ''}` : 'Found a problem: see System alerts') : 'Starts once the site is deployed on Vercel'} />
           </div>
-          <p className="ad-help">Every day this check keeps the database active (so a free Supabase project never pauses), confirms the Brevo key still works (keys expire after 90 days unused), and sends any receipts held back by Brevo's daily limit of 300. Problems appear in System alerts on the Overview.</p>
+          <p className="ad-help">Every day this check keeps the database active (so a free Supabase project never pauses), confirms with Paystack any payment still pending (donors who closed the tab before returning; the site also checks every few minutes while it has visitors), confirms the Brevo key still works (keys expire after 90 days unused), and sends any receipts held back by Brevo's daily limit of 300. Problems appear in System alerts on the Overview.</p>
           <div className="ad-actions">
             <ActionForm action={sendReceiptsNow} className="ad-form ad-form--row">
               <SubmitButton pending="Sending…">Send waiting receipts now</SubmitButton>
+            </ActionForm>
+            <ActionForm action={checkPaymentsNow} className="ad-form ad-form--row">
+              <SubmitButton pending="Checking with Paystack…" className="ad-btn ad-btn--ghost">Check pending payments now</SubmitButton>
             </ActionForm>
             <ActionForm action={runDailyNow} className="ad-form ad-form--row">
               <SubmitButton pending="Checking…" className="ad-btn ad-btn--ghost">Run the daily check now</SubmitButton>

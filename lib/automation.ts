@@ -2,6 +2,7 @@ import { db } from './db';
 import { checkEmailService } from './email';
 import { hasDatabase, hasEmail } from './env';
 import { sendUnsentReceipts, unsentCount } from './receipts';
+import { reconcilePending } from './reconcile';
 import { report } from './report';
 
 export type DailyRun = {
@@ -10,6 +11,7 @@ export type DailyRun = {
   trigger: 'schedule' | 'admin';
   database: boolean;      // Supabase answered (this also keeps a free project awake)
   email: string;          // what Brevo said
+  payments?: number;      // pending payments found paid at Paystack and confirmed
   sent: number;           // receipts sent by this run
   waiting: number;        // receipts still waiting afterwards
 };
@@ -18,7 +20,8 @@ export type DailyRun = {
 //   1. a database query  - counts as activity, so a free Supabase project never pauses
 //   2. a Brevo check-in  - sends nothing; keeps the API key in use (Brevo retires keys
 //                          after 90 days unused) and confirms it still works
-//   3. owed receipts     - sends receipts held back by the daily email limit or an error
+//   3. pending payments  - asks Paystack about checkouts still pending (no webhook here)
+//   4. owed receipts     - sends receipts held back by the daily email limit or an error
 // The result is saved, so the admin can see when it last ran and whether it worked.
 export async function runDaily(trigger: DailyRun['trigger']): Promise<DailyRun> {
   const run: DailyRun = { at: new Date().toISOString(), ok: true, trigger, database: false, email: 'Email is not set up yet.', sent: 0, waiting: 0 };
@@ -30,6 +33,16 @@ export async function runDaily(trigger: DailyRun['trigger']): Promise<DailyRun> 
     run.ok = false;
     await report('database', 'The daily check could not reach the database.', dbError);
     return run;
+  }
+
+  // first: confirm payments donors made but never came back from (their receipts go out below)
+  try {
+    const r = await reconcilePending(100);
+    run.payments = r.confirmed;
+    if (r.errors) run.ok = false;
+  } catch (e) {
+    run.ok = false;
+    await report('payments', 'The daily check could not check pending payments with Paystack.', e);
   }
 
   if (hasEmail()) {

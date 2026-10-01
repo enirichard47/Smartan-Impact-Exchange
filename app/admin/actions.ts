@@ -9,6 +9,7 @@ import { db } from '@/lib/db';
 import { report } from '@/lib/report';
 import { runDaily } from '@/lib/automation';
 import { sendUnsentReceipts } from '@/lib/receipts';
+import { reconcilePending } from '@/lib/reconcile';
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? '').trim();
 const dateOrNull = (f: FormData, k: string) => str(f, k) || null;
@@ -162,6 +163,26 @@ export async function sendReceiptsNow(_: FormState): Promise<FormState> {
     return reply(!r.errors, parts.join(' '));
   } catch (e) {
     return reply(false, `Nothing was sent. The database said: ${e instanceof Error ? e.message : String(e)}. If it mentions a missing function, run the latest supabase/schema.sql.`);
+  }
+}
+
+export async function checkPaymentsNow(_: FormState): Promise<FormState> {
+  await requireAdmin();
+  try {
+    const r = await reconcilePending(100);
+    revalidatePath('/admin');
+    if (!r.checked) return reply(true, 'No pending payments to check.');
+    const s = (n: number) => (n === 1 ? '' : 's');
+    const parts = [`Checked ${r.checked} pending payment${s(r.checked)} with Paystack.`];
+    parts.push(r.confirmed
+      ? `${r.confirmed} had been paid and ${r.confirmed === 1 ? 'is' : 'are'} now confirmed, with receipts sent.`
+      : 'None had been paid yet.');
+    if (r.failed) parts.push(`${r.failed} abandoned checkout${s(r.failed)} closed as failed.`);
+    if (r.stillPending) parts.push(`${r.stillPending} still pending; they are checked again automatically.`);
+    if (r.errors) parts.push('Paystack could not be reached for some of them; see System alerts.');
+    return reply(!r.errors, parts.join(' '));
+  } catch (e) {
+    return reply(false, `Could not check with Paystack: ${e instanceof Error ? e.message : String(e)}`);
   }
 }
 
