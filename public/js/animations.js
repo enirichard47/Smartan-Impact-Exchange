@@ -465,7 +465,8 @@
     const nf = new Intl.NumberFormat('en-NG');
     const MONTHS = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
     const [yy, mm, dd] = L.date.split('-').map(Number);
-    document.getElementById('opDate').textContent = `${dd} ${MONTHS[mm - 1]} ${yy}`;
+    const ord = dd % 10 === 1 && dd !== 11 ? 'ST' : dd % 10 === 2 && dd !== 12 ? 'ND' : dd % 10 === 3 && dd !== 13 ? 'RD' : 'TH';
+    document.getElementById('opDate').textContent = `${dd}${ord} ${MONTHS[mm - 1]} ${yy}`;   // e.g. 1ST OCTOBER 2026
     document.getElementById('opCity').textContent = L.city.toUpperCase();
     const amount = document.getElementById('opAmount');
     const bricksEl = document.getElementById('opBricks');

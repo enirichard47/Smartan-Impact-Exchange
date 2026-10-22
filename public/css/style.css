@@ -424,7 +424,9 @@ html:not(.js) .hero__lede, html:not(.js) .hero__ctas, html:not(.js) .hero__fine,
 .seq__track { position: relative; height: 2px; background: var(--line-2); }
 .seq__fill { position: absolute; inset: 0; background: var(--accent); transform-origin: left; transform: scaleX(0); }
 .seq__now { position: absolute; top: -5px; width: 1px; height: 12px; background: var(--gold); }
-.seq__now span { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); white-space: nowrap; color: var(--gold); }
+/* the label slides with progress: right of the marker near 0%, centred at 50%, left of it near 100%,
+   so it never runs off the edge of the track (--now is set by main.js) */
+.seq__now span { position: absolute; bottom: 16px; left: 50%; transform: translateX(calc(var(--now, 50) * -1%)); white-space: nowrap; color: var(--gold); }
 .seq__now b { font-weight: 500; }
 .seq__ticks { display: flex; justify-content: space-between; margin-top: 10px; }
 

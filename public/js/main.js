@@ -166,6 +166,7 @@
     applyFunded();
     if (heroReady) heroB.setProgress(v.progress / 100);
     seqNow.style.left = `${Math.min(100, v.progress)}%`;
+    seqNow.style.setProperty('--now', Math.min(100, v.progress));   // keeps the label inside the track
     $('#calcId').textContent = bid(nextId());
     $('#acqId').textContent = bid(nextId());
   }
@@ -457,6 +458,7 @@
   const seqPct = $('#seqPct'), seqAmt = $('#seqAmt'), seqFill = $('#seqFill'), seqNow = $('#seqNow');
   const seqStages = $$('.seq__stages li');
   seqNow.style.left = `${Math.min(100, vals().progress)}%`;
+  seqNow.style.setProperty('--now', Math.min(100, vals().progress));
   let seqLast = -1;
   SIX.onScroll((y, h) => {
     const r = seqSec.getBoundingClientRect();
