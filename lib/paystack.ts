@@ -45,7 +45,9 @@ export type PaystackTransaction = {
   id: number;
   status: 'success' | 'failed' | 'abandoned' | 'ongoing' | 'pending' | 'reversed' | string;
   reference: string;
-  amount: number; // kobo
+  amount: number; // kobo actually charged; includes Paystack's fee when the account passes fees to the customer
+  requested_amount?: number; // kobo the site asked for (the donation itself, without any fee)
+  fees?: number | null; // Paystack's fee, kobo
   currency: string;
   channel: string;
   paid_at: string | null;

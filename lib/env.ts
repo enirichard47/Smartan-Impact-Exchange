@@ -17,6 +17,13 @@ export const env = {
     || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : '')
     || 'http://localhost:3000'
   ).replace(/\/$/, ''),
+  // The address used in emails, which donors open long after the payment and on other devices.
+  // It must never be localhost (e.g. a receipt sent while testing on a computer), so it falls
+  // back to the public campaign address. PUBLIC_SITE_URL can override that address.
+  get emailSiteUrl() {
+    const local = /\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/.test(this.siteUrl);
+    return (local ? process.env.PUBLIC_SITE_URL || 'https://exchange.smartanhouse.org' : this.siteUrl).replace(/\/$/, '');
+  },
   supabaseUrl: process.env.SUPABASE_URL || '',
   supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   paystackSecret: process.env.PAYSTACK_SECRET_KEY || '',

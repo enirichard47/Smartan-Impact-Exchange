@@ -31,7 +31,10 @@ export async function confirmTransaction(tx: PaystackTransaction): Promise<Confi
 
   const { data, error } = await db().rpc('confirm_contribution', {
     p_reference: tx.reference,
-    p_amount_kobo: tx.amount,
+    // The donation the site asked for. When the Paystack account passes its fee to the
+    // donor, tx.amount is donation + fee (e.g. ₦10,253.81 for a ₦10,000 brick), so the
+    // check must use requested_amount; it still has to match what was charged exactly.
+    p_amount_kobo: tx.requested_amount ?? tx.amount,
     p_currency: tx.currency,
     p_paystack_id: tx.id,
     p_channel: tx.channel,

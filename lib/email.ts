@@ -41,8 +41,8 @@ export async function sendReceipt(r: Receipt): Promise<SendResult> {
   if (!validEmail(from.email)) {
     return { status: 'error', detail: `RECEIPT_FROM is not a valid email address ("${env.receiptFrom}"). Set it to e.g. Smartan House <thesmartanhouse@gmail.com> in Vercel's environment variables, then redeploy.` };
   }
-  const card = `${env.siteUrl}/builder/${r.builderNumber}`;
-  const cardImage = `${card}/opengraph-image`;
+  const card = `${env.emailSiteUrl}/builder/${r.builderNumber}`;
+  const cardImage = `${card}/download`;   // downloads the card image instead of opening it
   const rn = receiptNo(r.receiptNumber);
   const rows: [string, string][] = [
     ...(rn ? [['Receipt number', rn] as [string, string]] : []),
