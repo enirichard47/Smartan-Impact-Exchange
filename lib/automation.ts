@@ -1,6 +1,6 @@
 import { db } from './db';
 import { checkEmailService } from './email';
-import { hasDatabase, hasEmail } from './env';
+import { env, hasDatabase, hasEmail } from './env';
 import { sendUnsentReceipts, unsentCount } from './receipts';
 import { reconcilePending } from './reconcile';
 import { report } from './report';
@@ -64,7 +64,11 @@ export async function runDaily(trigger: DailyRun['trigger']): Promise<DailyRun> 
     run.waiting = await unsentCount();
   }
 
-  await db().from('settings').upsert({ key: 'last_daily_run', value: run });
+  await db().from('settings').upsert([
+    { key: 'last_daily_run', value: run },
+    // scheduled runs are tracked on their own, so pressing the admin button can't hide a broken schedule
+    ...(trigger === 'schedule' ? [{ key: 'last_scheduled_run', value: run }] : []),
+  ]);
   return run;
 }
 
@@ -72,4 +76,23 @@ export async function lastDailyRun(): Promise<DailyRun | null> {
   if (!hasDatabase()) return null;
   const { data } = await db().from('settings').select('value').eq('key', 'last_daily_run').maybeSingle();
   return (data?.value as DailyRun) || null;
+}
+
+// Is the automatic (Vercel Cron) check healthy? Used for the admin warnings.
+export type ScheduleHealth = {
+  deployed: boolean;          // running on Vercel (the schedule only exists there)
+  secretSet: boolean;         // CRON_SECRET present; without it every scheduled call is refused
+  last: DailyRun | null;      // the last run started by the schedule
+  overdue: boolean;           // deployed, and no scheduled run in 36 hours
+};
+export async function scheduleHealth(): Promise<ScheduleHealth> {
+  const deployed = process.env.VERCEL === '1';
+  const secretSet = Boolean(env.cronSecret);
+  let last: DailyRun | null = null;
+  if (hasDatabase()) {
+    const { data } = await db().from('settings').select('value').eq('key', 'last_scheduled_run').maybeSingle();
+    last = (data?.value as DailyRun) || null;
+  }
+  const age = last ? Date.now() - new Date(last.at).getTime() : Infinity;
+  return { deployed, secretSet, last, overdue: deployed && age > 36 * 3600e3 };
 }

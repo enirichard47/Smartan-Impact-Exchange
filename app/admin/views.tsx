@@ -6,7 +6,7 @@ import {
   addLedger, addUpdate, deleteLedger, deleteUpdate,
   checkPaymentsNow, clearAll, runDailyNow, saveBudgetLine, saveIndex, saveMilestone, saveOpening, saveTotals, sendReceiptsNow,
 } from './actions';
-import { lastDailyRun } from '@/lib/automation';
+import { lastDailyRun, scheduleHealth, type ScheduleHealth } from '@/lib/automation';
 import { ConfirmButton } from './confirm-button';
 import { CopyButton } from './copy-button';
 import { DetailsDrawer, type Details } from './details-drawer';
@@ -52,9 +52,27 @@ async function systemAlerts(): Promise<Alert[]> {
 
 const unsentReceipts = () => count(q => q.eq('status', 'success').is('receipt_sent_at', null));
 
+// Shown when the automatic daily check can't run, so a broken schedule never goes unnoticed.
+function ScheduleWarning({ s }: { s: ScheduleHealth }) {
+  if (!s.deployed) return null;   // the schedule only exists on the deployed (Vercel) site
+  if (!s.secretSet) return (
+    <div className="ad-banner ad-banner--warn" role="alert">
+      <b>The automatic daily check can't run.</b> <code>CRON_SECRET</code> isn't set on Vercel, so every scheduled call is refused.
+      Add it under Vercel, Settings, Environment Variables (any long random value), then redeploy.
+    </div>
+  );
+  if (s.overdue) return (
+    <div className="ad-banner ad-banner--warn" role="alert">
+      <b>The automatic daily check hasn't run {s.last ? `since ${when(s.last.at)}` : 'yet'}.</b> It should run every morning at about 7:00 WAT.
+      Check Vercel, Settings, Cron Jobs (it should list /api/cron/daily) and that <code>CRON_SECRET</code> is set. Until then, use <a className="ad-link" href="/admin?view=totals#automation">Run the daily check now</a>.
+    </div>
+  );
+  return null;
+}
+
 /* ============================ OVERVIEW ============================ */
 export async function Overview() {
-  const [t, pending, failed, unsent, daily, recent, milestones, opening, alerts, lastRun] = await Promise.all([
+  const [t, pending, failed, unsent, daily, recent, milestones, opening, alerts, sched] = await Promise.all([
     totals(),
     count(q => q.eq('status', 'pending')),
     count(q => q.eq('status', 'failed')),
@@ -64,10 +82,10 @@ export async function Overview() {
     db().from('milestones').select('*').order('position'),
     openingKobo(),
     systemAlerts(),
-    lastDailyRun(),
+    scheduleHealth(),
   ]);
-  const runAge = lastRun ? Date.now() - new Date(lastRun.at).getTime() : Infinity;
-  const runStale = runAge > 36 * 3600e3;   // it runs every 24 h; 36 h without one means it stopped
+  const lastRun = sched.last;
+  const runWarn = sched.overdue || (sched.deployed && !sched.secretSet) || Boolean(lastRun && !lastRun.ok);
   const raised = Number(t.raised_kobo) + opening;
   const raisedPct = pct(raised, CAMPAIGN.targetKobo);
   const days = ((daily.data || []) as { day: string; units: number }[]).map(d => ({ day: String(d.day), units: Number(d.units) }));
@@ -77,6 +95,7 @@ export async function Overview() {
 
   return (
     <>
+      <ScheduleWarning s={sched} />
       <div className="ad-kpis">
         <Kpi label="Raised" value={naira(raised)} sub={`${raisedPct.toFixed(2)}% of ${naira(CAMPAIGN.targetKobo)}${opening ? `, incl. ${naira(opening)} starting amount` : ''}`} progress={raisedPct} />
         <Kpi label="Builders" value={num(t.builders)} sub={t.updated_at ? `Last payment ${when(t.updated_at)}` : 'No payments yet'} />
@@ -94,7 +113,7 @@ export async function Overview() {
             <li><a href="/admin?view=contributions&status=success&receipt=unsent"><span>Receipts not emailed</span><b className={unsent ? 'is-warn' : ''}>{num(unsent)}</b></a></li>
             <li><a href="/admin?view=contributions&status=failed"><span>Failed payments</span><b>{num(failed)}</b></a></li>
             <li><a href="/admin?view=milestones"><span>Milestones verified</span><b>{done} / {ms.length}</b></a></li>
-            <li><a href="/admin?view=totals#automation"><span>Last automatic check</span><b className={runStale || (lastRun && !lastRun.ok) ? 'is-warn' : ''}>{lastRun ? when(lastRun.at) : 'Not run yet'}</b></a></li>
+            <li><a href="/admin?view=totals#automation"><span>Last automatic check</span><b className={runWarn ? 'is-warn' : ''}>{lastRun ? when(lastRun.at) : sched.deployed ? 'Never' : 'On the live site only'}</b></a></li>
             <li><a href="#alerts"><span>System alerts (7 days)</span><b className={alerts.length ? 'is-warn' : ''}>{num(alerts.length)}</b></a></li>
           </ul>
         </Card>
@@ -266,15 +285,15 @@ export async function Ledger() {
   return (
     <>
       <Card title="Add a ledger entry" meta={<span>Appears publicly in "Follow every naira"</span>}>
-        <form action={addLedger} className="ad-form ad-form--row">
+        <ActionForm action={addLedger} className="ad-form ad-form--row">
           <label><span>Date</span><input type="date" name="date" defaultValue={today()} required /></label>
           <label><span>Reference</span><input name="ref" defaultValue={nextRef} required /></label>
           <label><span>Category</span><Select name="category" required options={cats.map(c => ({ value: c.key, label: c.label }))} /></label>
           <label className="grow"><span>Detail</span><input name="detail" placeholder="What the money was used for" required /></label>
           <label><span>Source document</span><input name="source" placeholder="Invoice or voucher no." /></label>
           <label><span>Amount (₦)</span><input name="amount" inputMode="numeric" placeholder="50000" required /></label>
-          <button className="ad-btn ad-btn--primary" type="submit">Add entry</button>
-        </form>
+          <SubmitButton pending="Adding…">Add entry</SubmitButton>
+        </ActionForm>
       </Card>
       <Card title="Ledger" meta={<span className="mono">{rows.length} entries · {naira(total)}</span>} flush>
         {rows.length ? (
@@ -286,7 +305,7 @@ export async function Ledger() {
                   <td data-label="Date" className="dim nowrap">{watDate(l.entry_date)}</td><td data-label="Reference" className="mono">{l.ref}</td>
                   <td data-label="Category"><Pill tone="accent">{cats.find(c => c.key === l.category)?.label || l.category}</Pill></td>
                   <td data-label="Detail">{l.detail}</td><td data-label="Source" className="mono dim">{l.source_doc || '-'}</td><td data-label="Amount" className="r mono">{naira(l.amount_kobo)}</td>
-                  <td data-label="" className="r"><form action={deleteLedger}><input type="hidden" name="id" value={l.id} /><ConfirmButton message={`Delete ledger entry ${l.ref}? It will disappear from the public page.`}>Delete</ConfirmButton></form></td>
+                  <td data-label="" className="r"><ActionForm action={deleteLedger}><input type="hidden" name="id" value={l.id} /><ConfirmButton pending="Deleting…" message={`Delete ledger entry ${l.ref}? It will disappear from the public page.`}>Delete</ConfirmButton></ActionForm></td>
                 </tr>
               ))}
             </tbody>
@@ -304,14 +323,14 @@ export async function Updates() {
   return (
     <>
       <Card title="Publish an update">
-        <form action={addUpdate} className="ad-form">
+        <ActionForm action={addUpdate} className="ad-form">
           <div className="ad-form--row">
             <label><span>Date</span><input type="date" name="date" defaultValue={today()} required /></label>
             <label className="grow"><span>Title</span><input name="title" placeholder="Structural survey completed" required /></label>
           </div>
           <label><span>Details (optional)</span><textarea name="body" rows={3} placeholder="One or two sentences for Builders." /></label>
-          <div><button className="ad-btn ad-btn--primary" type="submit">Publish update</button></div>
-        </form>
+          <div><SubmitButton pending="Publishing…">Publish update</SubmitButton></div>
+        </ActionForm>
       </Card>
       <Card title="Published" meta={<span>{rows.length} updates</span>}>
         {rows.length ? (
@@ -320,7 +339,7 @@ export async function Updates() {
               <li key={u.id}>
                 <span className="ad-timeline__date mono">{watDate(u.published_on)}</span>
                 <div><b>{u.title}</b>{u.body ? <p>{u.body}</p> : null}</div>
-                <form action={deleteUpdate}><input type="hidden" name="id" value={u.id} /><ConfirmButton message={`Delete the update "${u.title}"?`}>Delete</ConfirmButton></form>
+                <ActionForm action={deleteUpdate}><input type="hidden" name="id" value={u.id} /><ConfirmButton pending="Deleting…" message={`Delete the update "${u.title}"?`}>Delete</ConfirmButton></ActionForm>
               </li>
             ))}
           </ol>
@@ -341,14 +360,14 @@ export async function Milestones() {
         {rows.map(m => (
           <li key={m.position} className={`ad-step ad-step--${m.status}`}>
             <i className="ad-step__dot" aria-hidden="true" />
-            <form action={saveMilestone} className="ad-form ad-form--row">
+            <ActionForm action={saveMilestone} className="ad-form ad-form--row">
               <input type="hidden" name="position" value={m.position} />
               <label className="grow"><span>Milestone {String(m.position).padStart(2, '0')}</span><input name="label" defaultValue={m.label} required /></label>
               <label><span>Status</span><Select name="status" defaultValue={m.status} options={STATUS_OPTIONS} /></label>
               <label><span>Verified on</span><input type="date" name="verified_on" defaultValue={m.verified_on || ''} /></label>
               <Pill tone={tone(m.status)}>{m.status === 'complete' ? 'Verified' : m.status === 'in-progress' ? 'In progress' : 'Upcoming'}</Pill>
-              <button className="ad-btn ad-btn--ghost" type="submit">Save</button>
-            </form>
+              <SubmitButton pending="Saving…" className="ad-btn ad-btn--ghost">Save</SubmitButton>
+            </ActionForm>
           </li>
         ))}
       </ol>
@@ -372,14 +391,14 @@ export async function Budget() {
       <Card title="Budget allocation" meta={<span>Private, for the team only</span>}>
         <div className="ad-rows">
           {rows.map(b => (
-            <form key={b.key} action={saveBudgetLine} className="ad-form ad-form--row ad-rows__row">
+            <ActionForm key={b.key} action={saveBudgetLine} className="ad-form ad-form--row ad-rows__row">
               <input type="hidden" name="key" value={b.key} />
               <label><span>Label</span><input name="label" defaultValue={b.label} required /></label>
               <label className="grow"><span>Note</span><input name="note" defaultValue={b.note || ''} /></label>
               <label><span>Amount (₦)</span><input name="amount" inputMode="numeric" defaultValue={koboToInput(b.amount_kobo)} placeholder="TBC" /></label>
               <span className="ad-rows__pct mono">{b.amount_kobo == null ? 'TBC' : `${pct(Number(b.amount_kobo), CAMPAIGN.targetKobo).toFixed(1)}%`}</span>
-              <button className="ad-btn ad-btn--ghost" type="submit">Save</button>
-            </form>
+              <SubmitButton pending="Saving…" className="ad-btn ad-btn--ghost">Save</SubmitButton>
+            </ActionForm>
           ))}
         </div>
       </Card>
@@ -395,14 +414,14 @@ export async function Index() {
     <Card title="Impact Index" meta={<span>Project milestone progress, never a price or return</span>}>
       <div className="ad-rows">
         {rows.map(i => (
-          <form key={i.position} action={saveIndex} className="ad-form ad-form--row ad-rows__row">
+          <ActionForm key={i.position} action={saveIndex} className="ad-form ad-form--row ad-rows__row">
             <input type="hidden" name="position" value={i.position} />
             <label className="grow"><span>Component</span><input name="label" defaultValue={i.label} required /></label>
             <label><span>Progress %</span><NumberField name="value" min={0} max={100} defaultValue={i.value} suffix="%" placeholder="Not set" /></label>
             <label><span>Verified on</span><input type="date" name="verified_on" defaultValue={i.verified_on || ''} /></label>
             <span className="ad-meter" aria-hidden="true"><i style={{ width: `${i.value ?? 0}%` }} /></span>
-            <button className="ad-btn ad-btn--ghost" type="submit">Save</button>
-          </form>
+            <SubmitButton pending="Saving…" className="ad-btn ad-btn--ghost">Save</SubmitButton>
+          </ActionForm>
         ))}
       </div>
     </Card>
@@ -411,7 +430,7 @@ export async function Index() {
 
 /* ========================= ALLOCATED & SPENT ======================= */
 export async function Totals() {
-  const [t, settings, lastRun, waiting] = await Promise.all([totals(), db().from('settings').select('*'), lastDailyRun(), unsentReceipts()]);
+  const [t, settings, lastRun, waiting, sched] = await Promise.all([totals(), db().from('settings').select('*'), lastDailyRun(), unsentReceipts(), scheduleHealth()]);
   const setting = (k: string) => (settings.data || []).find(s => s.key === k)?.value ?? null;
   const allocated = setting('allocated_kobo'), spent = setting('spent_kobo');
   const opening = Number(setting('opening_kobo')) || 0;
@@ -437,8 +456,10 @@ export async function Totals() {
         <Card title="Emails and the daily check" meta={<span>Runs automatically every day at about 7:00 WAT</span>}>
           <div className="ad-kpis ad-kpis--inline">
             <Kpi label="Receipts waiting" value={num(waiting)} sub={!hasEmail() ? 'Email is not set up yet' : waiting ? 'Sent by the next run, or with the button below' : 'Every receipt has been sent'} />
-            <Kpi label="Last automatic check" value={lastRun ? when(lastRun.at) : 'Not run yet'} sub={lastRun ? (lastRun.ok ? `OK${lastRun.trigger === 'admin' ? ', run from the admin' : ''}` : 'Found a problem: see System alerts') : 'Starts once the site is deployed on Vercel'} />
+            <Kpi label="Last automatic check" value={sched.last ? when(sched.last.at) : sched.deployed ? 'Never' : 'On the live site only'} sub={sched.last ? (sched.last.ok ? 'OK' : 'Found a problem: see System alerts') : sched.deployed ? 'The schedule has not run yet' : 'The schedule runs on Vercel, not on this computer'} />
+            <Kpi label="Last run by hand" value={lastRun && lastRun.trigger === 'admin' ? when(lastRun.at) : '-'} sub={lastRun && lastRun.trigger === 'admin' ? (lastRun.ok ? 'OK' : 'Found a problem: see System alerts') : 'Use the buttons below'} />
           </div>
+          <ScheduleWarning s={sched} />
           <p className="ad-help">Every day this check keeps the database active (so a free Supabase project never pauses), confirms with Paystack any payment still pending (donors who closed the tab before returning; the site also checks every few minutes while it has visitors), confirms the Brevo key still works (keys expire after 90 days unused), and sends any receipts held back by Brevo's daily limit of 300. Problems appear in System alerts on the Overview.</p>
           <div className="ad-actions">
             <ActionForm action={sendReceiptsNow} className="ad-form ad-form--row">

@@ -644,3 +644,10 @@ html { -webkit-tap-highlight-color: transparent; }
 }
 @keyframes ad-sheet-in { from { transform: translateY(100%); } to { transform: none; } }
 @media (prefers-reduced-motion: reduce) { .ad-sheet[open] { animation: none; } }
+
+/* ---------- admin: automatic-check warning ---------- */
+.ad-banner--warn { display: block; line-height: 1.6; color: var(--text); border-color: rgba(214, 181, 106, .55); border-left: 3px solid #D6B56A; }
+.ad-banner--warn b { color: #D6B56A; }
+.ad-banner--warn code { font: 12.5px var(--mono); }
+.ad-card .ad-banner--warn { margin-bottom: 14px; }
+#automation .ad-kpis--inline { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
