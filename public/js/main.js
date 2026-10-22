@@ -1582,6 +1582,16 @@
     };
     SIX.on('ready', () => setInterval(poll, 20000));
     document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
+
+    // Ask the server to check payments still pending with Paystack (donors who paid but
+    // closed the tab). The server runs it at most every 5 minutes for everyone, so this
+    // quiet ping costs nothing; a payment it confirms shows up in the next live update.
+    const checkPayments = () => {
+      if (document.hidden) return;
+      fetch('/api/payments/check', { method: 'POST', keepalive: true }).catch(() => {});
+    };
+    setTimeout(checkPayments, 4000);
+    setInterval(checkPayments, 5 * 60 * 1000);
   }
 
 

@@ -60,20 +60,20 @@ export async function reconcilePending(max = 20): Promise<Reconciled> {
   return out;
 }
 
-// At most once every 5 minutes across all servers: called in the background when
-// visitors' pages ask for live figures, so checks run whenever the site has visitors.
+// At most once every 5 minutes across all servers (the time of the last check is kept in
+// the database, so every server instance sees it). Called by /api/payments/check, which
+// visitors' pages ping quietly while the site is open, so checks run whenever it has visitors.
 const EVERY_MS = 5 * MINUTE;
-let lastLocal = 0;
-export async function maybeReconcile() {
-  if (!hasPayments() || Date.now() - lastLocal < EVERY_MS) return;
-  lastLocal = Date.now();
+export async function maybeReconcile(): Promise<{ ran: boolean; result?: Reconciled }> {
+  if (!hasPayments()) return { ran: false };
   try {
     const { data } = await db().from('settings').select('value').eq('key', 'last_reconcile').maybeSingle();
     const last = Number(data?.value) || 0;
-    if (Date.now() - last < EVERY_MS) return;   // another server checked recently
+    if (Date.now() - last < EVERY_MS) return { ran: false };   // checked recently
     await db().from('settings').upsert({ key: 'last_reconcile', value: Date.now() });
-    await reconcilePending();
+    return { ran: true, result: await reconcilePending() };
   } catch (e) {
     await report('payments', 'The automatic check of pending payments failed. It will try again in a few minutes.', e);
+    return { ran: false };
   }
 }
