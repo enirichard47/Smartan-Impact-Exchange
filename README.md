@@ -4,7 +4,7 @@ The fundraising site for the new Smartan House facility and the Acorn Incubator 
 
 Anyone can contribute in about a minute, without creating an account. They pay with card, bank transfer or USSD through Paystack, receive a numbered receipt by email, and get a Builder card to share. The page updates live as the total grows.
 
-> Impact Units are campaign contributions. They are not shares, securities or investments, and carry no ownership, returns or resale value. See `/terms`.
+> Impact Units are campaign contributions. They are not shares, securities or investments, and carry no ownership, returns or resale value.
 
 ---
 
@@ -188,6 +188,15 @@ Every receipt is claimed in the database before it is sent, so the live payment,
 
 On Vercel's free plan the check runs within about an hour of 7:00 WAT.
 
+## Legal pages
+
+The Terms of Contribution and Privacy Policy are written but **switched off** until the founder approves the final wording. They live in `app/_legal/`, a folder Next.js does not serve (any folder starting with `_` is private).
+
+To bring them back:
+1. Update the wording, and the details in `lib/legal.ts` (registered name, number, address, contact email).
+2. Move `app/_legal/terms` to `app/terms`, `app/_legal/privacy` to `app/privacy`, and `app/_legal/legal-page.tsx` to `app/legal-page.tsx`.
+3. Re-add the links: the footer, "How we use your details" on the details step, "I agree to the Terms of Contribution" on the payment checkbox, and the Builder page.
+
 ## Going live checklist
 
 - [ ] Run the latest `supabase/schema.sql` in Supabase.
@@ -198,7 +207,7 @@ On Vercel's free plan the check runs within about an hour of 7:00 WAT.
 - [ ] Verify the sending domain in Brevo and set `BREVO_API_KEY`.
 - [ ] Set `CRON_SECRET` on Vercel, then check **Settings → Emails and the daily check** in the admin the next morning.
 - [ ] Set a strong `ADMIN_PASSWORD` and a fresh `ADMIN_SESSION_SECRET` for production.
-- [ ] Fill in the legal details in `lib/legal.ts` (registered name, number, address), and have the Terms and Privacy Policy reviewed.
+- [ ] Bring back the Terms and Privacy pages once the founder approves them (see [Legal pages](#legal-pages)).
 - [ ] Make one real payment end to end on a phone, then **clear the test data** from the admin.
 - [ ] Set the starting amount, if any.
 - [ ] Confirm the launch date and the livestream link in `public/js/config.js`.
@@ -216,7 +225,7 @@ Most content is edited in the admin. A few things live in files:
 | Photos (captions and descriptions) | `public/js/config.js` (`photos`); image files go in `public/assets/photos/` (compressed WebP) |
 | Facility zones and specifications | `public/js/config.js` (`facility`) |
 | Legal details, contact email, refund window | `lib/legal.ts` |
-| Terms and Privacy text | `app/terms/page.tsx`, `app/privacy/page.tsx` |
+| Terms and Privacy text (switched off for now) | `app/_legal/terms/page.tsx`, `app/_legal/privacy/page.tsx` |
 | Page text and layout | `site/index.html`, `public/css/style.css`, `public/js/main.js` |
 
 ---

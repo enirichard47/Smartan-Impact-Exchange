@@ -67,7 +67,7 @@ export default async function BuilderPage({ params }: Props) {
         <a className="btn btn--primary" href="/?give=1">Lay a brick too</a>
         <a className="btn btn--ghost" href="/#facility">See the facility</a>
       </div>
-      <p className="bpage__fine">Every ₦10,000 lays one brick. Impact Units are campaign contributions, not investments or securities. <a href="/terms">Terms</a> <a href="/privacy">Privacy</a></p>
+      <p className="bpage__fine">Every ₦10,000 lays one brick. Impact Units are campaign contributions, not investments or securities.</p>
     </main>
   );
 }

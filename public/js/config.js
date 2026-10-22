@@ -88,7 +88,7 @@ window.SIX_CONFIG = {
     },
     // Which part of the facility model lights up for each component in the Facility list.
     // Model parts: 'l0' ground floor, 'l1' level 01, 'l2' level 02, 'roof', 'grounds', 'foundation'.
-    // PLACEHOLDER GUESSES — confirm with Smartan which floor holds what.
+    // Confirmed by Smartan House.
     zones: {
       house:     ['l1', 'l2'],          // Smartan House (residential)
       acorn:     ['l0'],                // Acorn Incubator Hub
@@ -111,14 +111,16 @@ window.SIX_CONFIG = {
     facSite:     { src: 'assets/photos/facility-site.webp', alt: 'The existing three-storey building on the site: weathered concrete walls, arched balconies with white railings and a palm tree in front', caption: 'The site today' },   // 05 the site today
     facAcorn:    { src: 'assets/photos/facility-acorn.webp', alt: 'Render of the Acorn Incubator Hub: a large U-shaped meeting table with leather chairs facing a wall of screens', caption: 'Render: Acorn Incubator Hub' },   // 06 render, Acorn Incubator Hub
     facPlan:     { src: 'assets/photos/facility-residence.webp', alt: 'Render of a Smartan House room: four bunk beds with navy bedding, a shared study desk between two windows and a patterned rug', caption: 'Render: Smartan House residence' },   // 07 render, Smartan House residence
-    siteLatest:  { src: 'assets/photos/facility-site.webp', alt: '', caption: '' },   // 08 latest from the site (dated caption)
+    // 08 the building's current state, under the build milestones. Swap in a newer photo
+    // (and update the caption) as work progresses.
+    siteLatest:  { src: 'assets/photos/facility-site.webp', alt: 'The current state of the building: a three-storey structure with weathered concrete walls, arched balconies with white railings and a palm tree in front', caption: 'Current state of the building' },
   },
 
   /* ------------------------------------------------------------------------
      LAUNCH / OPENING BELL
      ------------------------------------------------------------------------ */
   launch: {
-    date: '2026-09-23',       // YYYY-MM-DD, in WAT
+    date: '2026-10-01',       // YYYY-MM-DD, in WAT
     openTime: '09:00',        // HH:MM, in WAT — the opening bell
     city: 'Lagos, Nigeria',
     livestreamUrl: '',        // e.g. a YouTube Live link; shows "Watch the opening bell" when set

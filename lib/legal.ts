@@ -1,4 +1,5 @@
-// Facts used by the Terms (/terms) and Privacy (/privacy) pages.
+// Facts used by the Terms and Privacy pages. Those pages are switched off for now (app/_legal,
+// a folder Next.js does not serve); to bring them back, see "Legal pages" in the README.
 // CONFIRM WITH SMARTAN HOUSE before launch. Blank values are left out of the pages.
 export const LEGAL = {
   entity: 'The Smartan House',          // the organisation's full legal name, as registered
