@@ -384,7 +384,7 @@ export async function Budget() {
   return (
     <>
       <div className="ad-kpis ad-kpis--3">
-        <Kpi label="Budgeted" value={naira(set)} progress={pct(set, CAMPAIGN.targetKobo)} sub={`${pct(set, CAMPAIGN.targetKobo).toFixed(1)}% of the ₦500M target`} />
+        <Kpi label="Budgeted" value={naira(set)} progress={pct(set, CAMPAIGN.targetKobo)} sub={`${pct(set, CAMPAIGN.targetKobo).toFixed(1)}% of the ₦1B target`} />
         <Kpi label="Still to budget" value={naira(Math.max(0, CAMPAIGN.targetKobo - set))} sub={over ? 'Budget is above the target' : 'Lines left blank are not yet budgeted'} />
         <Kpi label="Lines set" value={`${rows.filter(b => b.amount_kobo != null).length} / ${rows.length}`} />
       </div>

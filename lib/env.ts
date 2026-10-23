@@ -3,9 +3,9 @@
 
 export const CAMPAIGN = {
   id: 'SH-2026-001',
-  targetKobo: 500_000_000 * 100, // ₦500,000,000
+  targetKobo: 1_000_000_000 * 100, // ₦1,000,000,000
   unitPriceKobo: 10_000 * 100, // ₦10,000 = 1 Impact Unit = 1 brick (also the minimum)
-  maxUnits: 50_000, // the whole target in one go
+  maxUnits: 100_000, // the whole target in one go
   receiptPrefix: 'SIX-2026', // receipt numbers read SIX-2026-000123
 };
 

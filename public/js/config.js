@@ -10,7 +10,7 @@
    ========================================================================== */
 window.SIX_CONFIG = {
   campaignId: 'SH-2026-001',
-  target: 500000000,          // ₦
+  target: 1000000000,         // ₦
   unitPrice: 10000,           // ₦ per Impact Unit — 1 unit = 1 brick, also the minimum contribution
   siteUrl: 'https://smartanhouse.org',   // used in share links and the Builder card
 
