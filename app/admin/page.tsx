@@ -17,7 +17,7 @@ const TITLES: Record<View, [string, string]> = {
   ledger: ['Transparency ledger', 'Verified allocations and spending, published in "Follow every naira".'],
   updates: ['Campaign updates', 'News for Builders, shown on the public page.'],
   milestones: ['Milestones', 'The physical build, step by step.'],
-  budget: ['Budget', 'How the ₦400M target is allocated. Private: never shown on the public site.'],
+  budget: ['Budget', 'How the ₦500M target is allocated. Private: never shown on the public site.'],
   index: ['Impact Index', 'Verified project milestone progress.'],
   totals: ['Campaign settings', 'The starting amount, private figures, and clearing test data.'],
 };

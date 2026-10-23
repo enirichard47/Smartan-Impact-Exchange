@@ -1,6 +1,6 @@
 # Smartan Impact Exchange
 
-The fundraising site for the new Smartan House facility and the Acorn Incubator Hub. The target is **₦400,000,000**, raised **brick by brick**: every ₦10,000 is one brick (one Impact Unit), and one brick is also the minimum contribution.
+The fundraising site for the new Smartan House facility and the Acorn Incubator Hub. The target is **₦500,000,000**, raised **brick by brick**: every ₦10,000 is one brick (one Impact Unit), and one brick is also the minimum contribution.
 
 Anyone can contribute in about a minute, without creating an account. They pay with card, bank transfer or USSD through Paystack, receive a numbered receipt by email, and get a Builder card to share. The page updates live as the total grows.
 
@@ -49,7 +49,7 @@ Builder and receipt numbers are only issued for confirmed payments, so failed or
 | Section | What it shows |
 |---|---|
 | Opening sequence and Opening Bell | A launch-day intro, and the "ring the bell and lay a brick" call to action |
-| Hero and live market board | The total raised, progress to ₦400M and bricks laid |
+| Hero and live market board | The total raised, progress to ₦500M and bricks laid |
 | The case, The Facility, The Build | Why the facility is needed, what it holds, and an illustration that builds as money comes in |
 | Live campaign progress | Milestones, the Impact Index and the daily bricks chart |
 | The Builders | A searchable directory with one card per Builder, newest first. Searchable by first name or Builder number, 24 at a time (12 on phones) |
